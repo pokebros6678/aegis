@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Public HTTPS access (Cloudflare Tunnel)
+
+To expose AEGIS on the internet without port-forwarding, use Cloudflare Tunnel. Set **`AUTH_URL`** in `.env` to your public `https://` URL. Step-by-step: [cloudflare/SETUP.md](cloudflare/SETUP.md).
+
 ## Getting Started
 
 First, run the development server:

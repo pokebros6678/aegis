@@ -48,3 +48,6 @@ next-env.d.ts
 
 # Electron
 /dist-electron/
+
+# Cloudflare Tunnel — copy from cloudflare/config.example.yml; may contain your tunnel id / hostname
+/cloudflare/config.yml

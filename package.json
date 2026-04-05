@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "aegis",
   "version": "0.1.0",
   "private": true,
@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "tunnel:quick": "cloudflared tunnel --url http://127.0.0.1:3000",
     "postinstall": "prisma generate",
     "electron": "electron .",
     "electron:dev": "concurrently -k \"next dev\" \"wait-on -t 120000 http://127.0.0.1:3000 && electron .\"",

@@ -1,0 +1,23 @@
+# Example systemd unit — install on the VM after cloudflared + config.yml work manually.
+#
+#   sudo cp cloudflare/aegis-tunnel.service.example /etc/systemd/system/aegis-tunnel.service
+#   sudo nano /etc/systemd/system/aegis-tunnel.service   # fix User + paths
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now aegis-tunnel.service
+#
+# AEGIS itself should run separately (e.g. npm run start or start-server.sh).
+
+[Unit]
+Description=Cloudflare Tunnel (AEGIS)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=REPLACE_USER
+ExecStart=/usr/bin/cloudflared tunnel --config /home/REPLACE_USER/aegis/cloudflare/config.yml run
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

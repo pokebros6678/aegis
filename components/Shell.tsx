@@ -13,7 +13,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         aria-hidden
       />
       <header className="relative z-10 border-b border-aegis-lime/40 bg-black px-4 py-3 isolate">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
+        <div className="mx-auto max-w-6xl space-y-3">
           <div>
             <pre className="text-[10px] leading-tight text-aegis-dim sm:text-xs">
 {`╔══════════════════════════════════════╗
@@ -24,7 +24,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
               calirp://intel<span className="text-aegis-lime">$</span> session active
             </p>
           </div>
-          <nav className="flex flex-wrap items-center gap-3 font-mono text-sm">
+          <nav
+            className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-aegis-lime/25 pt-3 font-mono text-sm"
+            aria-label="Main"
+          >
             <Link
               href="/"
               className="text-aegis-lime underline-offset-4 hover:underline focus:outline focus:outline-2 focus:outline-aegis-lime"

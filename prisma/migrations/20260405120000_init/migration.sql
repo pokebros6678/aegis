@@ -1,4 +1,4 @@
-﻿-- CreateTable
+-- CreateTable
 CREATE TABLE "Player" (
     "id" TEXT NOT NULL,
     "ssn" TEXT NOT NULL,

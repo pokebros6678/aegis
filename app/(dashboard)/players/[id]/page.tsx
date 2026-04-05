@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { auth } from "@/auth";
 import { PlayerOverviewForm } from "@/components/player/PlayerOverviewForm";
 import {
   createAffiliation,
@@ -58,6 +59,9 @@ export default async function PlayerPage({
   const editAffiliationId = sp.editAffiliationId ?? "";
   const editEmploymentId = sp.editEmploymentId ?? "";
   const editMovementId = sp.editMovementId ?? "";
+
+  const session = await auth();
+  const isAdmin = session?.user?.role === "admin";
 
   const player = await prisma.player.findUnique({
     where: { id },
@@ -122,14 +126,16 @@ export default async function PlayerPage({
             &larr; [ INDEX ]
           </Link>
         </div>
-        <form action={deletePlayer.bind(null, player.id)}>
-          <button
-            type="submit"
-            className="border border-red-500/70 px-3 py-1 text-xs text-red-400 hover:bg-red-500/10"
-          >
-            [ PURGE_RECORD ]
-          </button>
-        </form>
+        {isAdmin && (
+          <form action={deletePlayer.bind(null, player.id)}>
+            <button
+              type="submit"
+              className="border border-red-500/70 px-3 py-1 text-xs text-red-400 hover:bg-red-500/10"
+            >
+              [ PURGE_RECORD ]
+            </button>
+          </form>
+        )}
       </div>
 
       <nav className="flex flex-wrap gap-2 border-b border-[#39ff14]/30 pb-2 font-mono text-sm">

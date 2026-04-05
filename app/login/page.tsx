@@ -46,7 +46,7 @@ export default function LoginPage() {
         </p>
         <div>
           <label htmlFor="password" className="text-xs text-[#6fdc5c]">
-            staff_password
+            member_or_admin_password
           </label>
           <input
             id="password"

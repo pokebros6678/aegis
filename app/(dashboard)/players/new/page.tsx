@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { createPlayer } from "@/lib/actions/intel";
 
-export default function NewPlayerPage() {
+export default async function NewPlayerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ nameBlocked?: string }>;
+}) {
+  const sp = await searchParams;
+  const nameBlocked = sp.nameBlocked === "1";
+
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <div>
@@ -12,6 +19,12 @@ export default function NewPlayerPage() {
           &larr; [ BACK_TO_INDEX ]
         </Link>
       </div>
+
+      {nameBlocked && (
+        <pre className="whitespace-pre-wrap border border-red-500/60 bg-black p-2 text-xs text-red-400">
+          stderr: Name blocked by policy (matches name blacklist).
+        </pre>
+      )}
 
       <form action={createPlayer} className="space-y-4 border border-[#39ff14]/50 p-4">
         <Field label="SSN" name="ssn" required />

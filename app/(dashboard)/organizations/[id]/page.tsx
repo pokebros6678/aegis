@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { auth } from "@/auth";
 import { OrganizationOverviewForm } from "@/components/organization/OrganizationOverviewForm";
 import {
   createOrganizationIntel,
@@ -54,6 +55,9 @@ export default async function OrganizationPage({
   const editRelationId = sp.editRelationId ?? "";
   const editIntelId = sp.editIntelId ?? "";
   const editLocationId = sp.editLocationId ?? "";
+
+  const session = await auth();
+  const isAdmin = session?.user?.role === "admin";
 
   const org = await prisma.organization.findUnique({
     where: { id },
@@ -124,14 +128,16 @@ export default async function OrganizationPage({
             &larr; [ ORG_INDEX ]
           </Link>
         </div>
-        <form action={deleteOrganization.bind(null, org.id)}>
-          <button
-            type="submit"
-            className="border border-red-500/70 px-3 py-1 text-xs text-red-400 hover:bg-red-500/10"
-          >
-            [ PURGE_RECORD ]
-          </button>
-        </form>
+        {isAdmin && (
+          <form action={deleteOrganization.bind(null, org.id)}>
+            <button
+              type="submit"
+              className="border border-red-500/70 px-3 py-1 text-xs text-red-400 hover:bg-red-500/10"
+            >
+              [ PURGE_RECORD ]
+            </button>
+          </form>
+        )}
       </div>
 
       <nav className="flex flex-wrap gap-2 border-b border-[#39ff14]/30 pb-2 font-mono text-sm">

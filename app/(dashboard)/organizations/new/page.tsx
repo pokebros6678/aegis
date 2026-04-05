@@ -3,7 +3,14 @@ import { createOrganization } from "@/lib/actions/organizations";
 import { ORGANIZATION_TYPE_LABELS } from "@/lib/organizationLabels";
 import { organizationTypeValues } from "@/lib/validations";
 
-export default function NewOrganizationPage() {
+export default async function NewOrganizationPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ nameBlocked?: string }>;
+}) {
+  const sp = await searchParams;
+  const nameBlocked = sp.nameBlocked === "1";
+
   return (
     <div className="space-y-6">
       <div>
@@ -17,6 +24,12 @@ export default function NewOrganizationPage() {
           &larr; [ ORG_INDEX ]
         </Link>
       </div>
+
+      {nameBlocked && (
+        <pre className="max-w-xl whitespace-pre-wrap border border-red-500/60 bg-black p-2 text-xs text-red-400">
+          stderr: Name blocked by policy (matches name blacklist).
+        </pre>
+      )}
 
       <form
         action={createOrganization}

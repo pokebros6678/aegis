@@ -15,6 +15,33 @@ enum OrganizationType {
   CARTEL
 }
 
+enum AuditLogAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum AuditActorRole {
+  MEMBER
+  ADMIN
+}
+
+model AuditLog {
+  id         String          @id @default(cuid())
+  createdAt  DateTime        @default(now())
+  action     AuditLogAction
+  entityType String
+  entityId   String
+  actorRole  AuditActorRole
+}
+
+model NameBlacklist {
+  id               String   @id @default(cuid())
+  phrase           String
+  phraseNormalized String   @unique
+  createdAt        DateTime @default(now())
+}
+
 model Player {
   id          String   @id @default(cuid())
   ssn         String   @unique

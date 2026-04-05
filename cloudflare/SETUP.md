@@ -109,4 +109,4 @@ Your domain’s DNS must be on **Cloudflare** (nameservers at Cloudflare).
 
 - **Login redirect loop or wrong host:** `AUTH_URL` must match the URL in the browser exactly (`https`, hostname, no trailing slash).
 - **502 / connection refused:** AEGIS is not running, or not listening on `127.0.0.1:3000`.
-- **Staff password:** still `AEGIS_STAFF_PASSWORD` in `.env` (unchanged by the tunnel).
+- **Staff passwords:** set `AEGIS_ADMIN_PASSWORD` and `AEGIS_MEMBER_PASSWORD` in `.env` (unchanged by the tunnel). If `AEGIS_ADMIN_PASSWORD` is unset, `AEGIS_STAFF_PASSWORD` still works as admin-only for migration.

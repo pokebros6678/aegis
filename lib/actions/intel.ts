@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { requireAdmin, requireAuth, sessionActorRole } from "@/lib/authz";
+import { EntityType } from "@/lib/audit-log";
+import { isNameBlacklisted } from "@/lib/blacklist";
 import { prisma } from "@/lib/prisma";
 import {
   affiliationSchema,
@@ -16,13 +18,9 @@ import {
   vehicleUpdateSchema,
 } from "@/lib/validations";
 
-async function requireAuth() {
-  const session = await auth();
-  if (!session) throw new Error("Unauthorized");
-}
-
 export async function createPlayer(formData: FormData) {
-  await requireAuth();
+  const session = await requireAuth();
+  const actorRole = sessionActorRole(session);
   const parsed = playerUpsertSchema.safeParse({
     ssn: formData.get("ssn"),
     firstName: formData.get("firstName"),
@@ -33,16 +31,31 @@ export async function createPlayer(formData: FormData) {
     return;
   }
   const { ssn, firstName, lastName, dateOfBirth } = parsed.data;
-  let p;
+  if (await isNameBlacklisted({ firstName, lastName })) {
+    redirect("/players/new?nameBlocked=1");
+  }
   try {
-    p = await prisma.player.create({
-      data: {
-        ssn,
-        firstName,
-        lastName,
-        dateOfBirth: new Date(dateOfBirth + "T12:00:00.000Z"),
-      },
+    const p = await prisma.$transaction(async (tx) => {
+      const created = await tx.player.create({
+        data: {
+          ssn,
+          firstName,
+          lastName,
+          dateOfBirth: new Date(dateOfBirth + "T12:00:00.000Z"),
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          action: "CREATE",
+          entityType: EntityType.Player,
+          entityId: created.id,
+          actorRole,
+        },
+      });
+      return created;
     });
+    revalidatePath("/");
+    redirect(`/players/${p.id}?tab=overview`);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Create failed";
     if (msg.includes("Unique constraint")) {
@@ -50,12 +63,11 @@ export async function createPlayer(formData: FormData) {
     }
     return;
   }
-  revalidatePath("/");
-  redirect(`/players/${p.id}?tab=overview`);
 }
 
 export async function updatePlayer(playerId: string, formData: FormData) {
-  await requireAuth();
+  const session = await requireAuth();
+  const actorRole = sessionActorRole(session);
   const parsed = playerUpsertSchema.safeParse({
     ssn: formData.get("ssn"),
     firstName: formData.get("firstName"),
@@ -66,15 +78,32 @@ export async function updatePlayer(playerId: string, formData: FormData) {
     return { error: parsed.error.flatten().fieldErrors };
   }
   const { ssn, firstName, lastName, dateOfBirth } = parsed.data;
-  try {
-    await prisma.player.update({
-      where: { id: playerId },
-      data: {
-        ssn,
-        firstName,
-        lastName,
-        dateOfBirth: new Date(dateOfBirth + "T12:00:00.000Z"),
+  if (await isNameBlacklisted({ firstName, lastName })) {
+    return {
+      error: {
+        _form: ["Name blocked by policy"],
       },
+    };
+  }
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.player.update({
+        where: { id: playerId },
+        data: {
+          ssn,
+          firstName,
+          lastName,
+          dateOfBirth: new Date(dateOfBirth + "T12:00:00.000Z"),
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          action: "UPDATE",
+          entityType: EntityType.Player,
+          entityId: playerId,
+          actorRole,
+        },
+      });
     });
     revalidatePath(`/players/${playerId}`);
     revalidatePath("/");
@@ -89,14 +118,26 @@ export async function updatePlayer(playerId: string, formData: FormData) {
 }
 
 export async function deletePlayer(playerId: string) {
-  await requireAuth();
-  await prisma.player.delete({ where: { id: playerId } });
+  const session = await requireAdmin();
+  const actorRole = sessionActorRole(session);
+  await prisma.$transaction(async (tx) => {
+    await tx.player.delete({ where: { id: playerId } });
+    await tx.auditLog.create({
+      data: {
+        action: "DELETE",
+        entityType: EntityType.Player,
+        entityId: playerId,
+        actorRole,
+      },
+    });
+  });
   revalidatePath("/");
   redirect("/");
 }
 
 export async function createVehicle(formData: FormData) {
-  await requireAuth();
+  const session = await requireAuth();
+  const actorRole = sessionActorRole(session);
   const parsed = vehicleSchema.safeParse({
     playerId: formData.get("playerId"),
     plate: formData.get("plate") ?? undefined,
@@ -106,26 +147,48 @@ export async function createVehicle(formData: FormData) {
   });
   if (!parsed.success) return;
   const d = parsed.data;
-  await prisma.vehicle.create({
-    data: {
-      playerId: d.playerId,
-      plate: d.plate ?? null,
-      model: d.model ?? null,
-      color: d.color ?? null,
-      notes: d.notes ?? null,
-    },
+  await prisma.$transaction(async (tx) => {
+    const v = await tx.vehicle.create({
+      data: {
+        playerId: d.playerId,
+        plate: d.plate ?? null,
+        model: d.model ?? null,
+        color: d.color ?? null,
+        notes: d.notes ?? null,
+      },
+    });
+    await tx.auditLog.create({
+      data: {
+        action: "CREATE",
+        entityType: EntityType.Vehicle,
+        entityId: v.id,
+        actorRole,
+      },
+    });
   });
   revalidatePath(`/players/${d.playerId}`);
 }
 
 export async function deleteVehicle(id: string, playerId: string) {
-  await requireAuth();
-  await prisma.vehicle.delete({ where: { id } });
+  const session = await requireAuth();
+  const actorRole = sessionActorRole(session);
+  await prisma.$transaction(async (tx) => {
+    await tx.vehicle.delete({ where: { id } });
+    await tx.auditLog.create({
+      data: {
+        action: "DELETE",
+        entityType: EntityType.Vehicle,
+        entityId: id,
+        actorRole,
+      },
+    });
+  });
   revalidatePath(`/players/${playerId}`);
 }
 
 export async function updateVehicle(formData: FormData) {
-  await requireAuth();
+  const session = await requireAuth();
+  const actorRole = sessionActorRole(session);
   const parsed = vehicleUpdateSchema.safeParse({
     playerId: formData.get("playerId"),
     vehicleId: formData.get("vehicleId"),
@@ -140,21 +203,32 @@ export async function updateVehicle(formData: FormData) {
     where: { id: d.vehicleId, playerId: d.playerId },
   });
   if (!row) return;
-  await prisma.vehicle.update({
-    where: { id: d.vehicleId },
-    data: {
-      plate: d.plate ?? null,
-      model: d.model ?? null,
-      color: d.color ?? null,
-      notes: d.notes ?? null,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.vehicle.update({
+      where: { id: d.vehicleId },
+      data: {
+        plate: d.plate ?? null,
+        model: d.model ?? null,
+        color: d.color ?? null,
+        notes: d.notes ?? null,
+      },
+    });
+    await tx.auditLog.create({
+      data: {
+        action: "UPDATE",
+        entityType: EntityType.Vehicle,
+        entityId: d.vehicleId,
+        actorRole,
+      },
+    });
   });
   revalidatePath(`/players/${d.playerId}`);
   redirect(`/players/${d.playerId}?tab=vehicles`);
 }
 
 export async function createAffiliation(formData: FormData) {
-  await requireAuth();
+  const session = await requireAuth();
+  const actorRole = sessionActorRole(session);
   const parsed = affiliationSchema.safeParse({
     playerId: formData.get("playerId"),
     name: formData.get("name"),
@@ -165,26 +239,48 @@ export async function createAffiliation(formData: FormData) {
   if (!parsed.success) return;
   const d = parsed.data;
   if (d.relatedPlayerId === d.playerId) return;
-  await prisma.affiliation.create({
-    data: {
-      playerId: d.playerId,
-      name: d.name,
-      role: d.role ?? null,
-      notes: d.notes ?? null,
-      relatedPlayerId: d.relatedPlayerId ?? null,
-    },
+  await prisma.$transaction(async (tx) => {
+    const a = await tx.affiliation.create({
+      data: {
+        playerId: d.playerId,
+        name: d.name,
+        role: d.role ?? null,
+        notes: d.notes ?? null,
+        relatedPlayerId: d.relatedPlayerId ?? null,
+      },
+    });
+    await tx.auditLog.create({
+      data: {
+        action: "CREATE",
+        entityType: EntityType.Affiliation,
+        entityId: a.id,
+        actorRole,
+      },
+    });
   });
   revalidatePath(`/players/${d.playerId}`);
 }
 
 export async function deleteAffiliation(id: string, playerId: string) {
-  await requireAuth();
-  await prisma.affiliation.delete({ where: { id } });
+  const session = await requireAuth();
+  const actorRole = sessionActorRole(session);
+  await prisma.$transaction(async (tx) => {
+    await tx.affiliation.delete({ where: { id } });
+    await tx.auditLog.create({
+      data: {
+        action: "DELETE",
+        entityType: EntityType.Affiliation,
+        entityId: id,
+        actorRole,
+      },
+    });
+  });
   revalidatePath(`/players/${playerId}`);
 }
 
 export async function updateAffiliation(formData: FormData) {
-  await requireAuth();
+  const session = await requireAuth();
+  const actorRole = sessionActorRole(session);
   const parsed = affiliationUpdateSchema.safeParse({
     playerId: formData.get("playerId"),
     affiliationId: formData.get("affiliationId"),
@@ -200,21 +296,32 @@ export async function updateAffiliation(formData: FormData) {
     where: { id: d.affiliationId, playerId: d.playerId },
   });
   if (!row) return;
-  await prisma.affiliation.update({
-    where: { id: d.affiliationId },
-    data: {
-      name: d.name,
-      role: d.role ?? null,
-      notes: d.notes ?? null,
-      relatedPlayerId: d.relatedPlayerId ?? null,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.affiliation.update({
+      where: { id: d.affiliationId },
+      data: {
+        name: d.name,
+        role: d.role ?? null,
+        notes: d.notes ?? null,
+        relatedPlayerId: d.relatedPlayerId ?? null,
+      },
+    });
+    await tx.auditLog.create({
+      data: {
+        action: "UPDATE",
+        entityType: EntityType.Affiliation,
+        entityId: d.affiliationId,
+        actorRole,
+      },
+    });
   });
   revalidatePath(`/players/${d.playerId}`);
   redirect(`/players/${d.playerId}?tab=affiliations`);
 }
 
 export async function createEmployment(formData: FormData) {
-  await requireAuth();
+  const session = await requireAuth();
+  const actorRole = sessionActorRole(session);
   const parsed = employmentSchema.safeParse({
     playerId: formData.get("playerId"),
     employer: formData.get("employer"),
@@ -225,27 +332,49 @@ export async function createEmployment(formData: FormData) {
   });
   if (!parsed.success) return;
   const d = parsed.data;
-  await prisma.employmentRecord.create({
-    data: {
-      playerId: d.playerId,
-      employer: d.employer,
-      title: d.title ?? null,
-      startDate: d.startDate ? new Date(d.startDate + "T12:00:00.000Z") : null,
-      endDate: d.endDate ? new Date(d.endDate + "T12:00:00.000Z") : null,
-      notes: d.notes ?? null,
-    },
+  await prisma.$transaction(async (tx) => {
+    const e = await tx.employmentRecord.create({
+      data: {
+        playerId: d.playerId,
+        employer: d.employer,
+        title: d.title ?? null,
+        startDate: d.startDate ? new Date(d.startDate + "T12:00:00.000Z") : null,
+        endDate: d.endDate ? new Date(d.endDate + "T12:00:00.000Z") : null,
+        notes: d.notes ?? null,
+      },
+    });
+    await tx.auditLog.create({
+      data: {
+        action: "CREATE",
+        entityType: EntityType.EmploymentRecord,
+        entityId: e.id,
+        actorRole,
+      },
+    });
   });
   revalidatePath(`/players/${d.playerId}`);
 }
 
 export async function deleteEmployment(id: string, playerId: string) {
-  await requireAuth();
-  await prisma.employmentRecord.delete({ where: { id } });
+  const session = await requireAuth();
+  const actorRole = sessionActorRole(session);
+  await prisma.$transaction(async (tx) => {
+    await tx.employmentRecord.delete({ where: { id } });
+    await tx.auditLog.create({
+      data: {
+        action: "DELETE",
+        entityType: EntityType.EmploymentRecord,
+        entityId: id,
+        actorRole,
+      },
+    });
+  });
   revalidatePath(`/players/${playerId}`);
 }
 
 export async function updateEmployment(formData: FormData) {
-  await requireAuth();
+  const session = await requireAuth();
+  const actorRole = sessionActorRole(session);
   const parsed = employmentUpdateSchema.safeParse({
     playerId: formData.get("playerId"),
     employmentId: formData.get("employmentId"),
@@ -261,22 +390,33 @@ export async function updateEmployment(formData: FormData) {
     where: { id: d.employmentId, playerId: d.playerId },
   });
   if (!row) return;
-  await prisma.employmentRecord.update({
-    where: { id: d.employmentId },
-    data: {
-      employer: d.employer,
-      title: d.title ?? null,
-      startDate: d.startDate ? new Date(d.startDate + "T12:00:00.000Z") : null,
-      endDate: d.endDate ? new Date(d.endDate + "T12:00:00.000Z") : null,
-      notes: d.notes ?? null,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.employmentRecord.update({
+      where: { id: d.employmentId },
+      data: {
+        employer: d.employer,
+        title: d.title ?? null,
+        startDate: d.startDate ? new Date(d.startDate + "T12:00:00.000Z") : null,
+        endDate: d.endDate ? new Date(d.endDate + "T12:00:00.000Z") : null,
+        notes: d.notes ?? null,
+      },
+    });
+    await tx.auditLog.create({
+      data: {
+        action: "UPDATE",
+        entityType: EntityType.EmploymentRecord,
+        entityId: d.employmentId,
+        actorRole,
+      },
+    });
   });
   revalidatePath(`/players/${d.playerId}`);
   redirect(`/players/${d.playerId}?tab=employment`);
 }
 
 export async function createPlayerMovement(formData: FormData) {
-  await requireAuth();
+  const session = await requireAuth();
+  const actorRole = sessionActorRole(session);
   const parsed = playerMovementSchema.safeParse({
     playerId: formData.get("playerId"),
     seenAt: formData.get("seenAt"),
@@ -288,20 +428,31 @@ export async function createPlayerMovement(formData: FormData) {
   const d = parsed.data;
   const seen = new Date(d.seenAt);
   if (Number.isNaN(seen.getTime())) return;
-  await prisma.playerMovement.create({
-    data: {
-      playerId: d.playerId,
-      seenAt: seen,
-      locationDescription: d.locationDescription,
-      notes: d.notes ?? null,
-      source: d.source ?? null,
-    },
+  await prisma.$transaction(async (tx) => {
+    const m = await tx.playerMovement.create({
+      data: {
+        playerId: d.playerId,
+        seenAt: seen,
+        locationDescription: d.locationDescription,
+        notes: d.notes ?? null,
+        source: d.source ?? null,
+      },
+    });
+    await tx.auditLog.create({
+      data: {
+        action: "CREATE",
+        entityType: EntityType.PlayerMovement,
+        entityId: m.id,
+        actorRole,
+      },
+    });
   });
   revalidatePath(`/players/${d.playerId}`);
 }
 
 export async function updatePlayerMovement(formData: FormData) {
-  await requireAuth();
+  const session = await requireAuth();
+  const actorRole = sessionActorRole(session);
   const parsed = playerMovementUpdateSchema.safeParse({
     playerId: formData.get("playerId"),
     movementId: formData.get("movementId"),
@@ -318,24 +469,46 @@ export async function updatePlayerMovement(formData: FormData) {
   if (!row) return;
   const seen = new Date(d.seenAt);
   if (Number.isNaN(seen.getTime())) return;
-  await prisma.playerMovement.update({
-    where: { id: d.movementId },
-    data: {
-      seenAt: seen,
-      locationDescription: d.locationDescription,
-      notes: d.notes ?? null,
-      source: d.source ?? null,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.playerMovement.update({
+      where: { id: d.movementId },
+      data: {
+        seenAt: seen,
+        locationDescription: d.locationDescription,
+        notes: d.notes ?? null,
+        source: d.source ?? null,
+      },
+    });
+    await tx.auditLog.create({
+      data: {
+        action: "UPDATE",
+        entityType: EntityType.PlayerMovement,
+        entityId: d.movementId,
+        actorRole,
+      },
+    });
   });
   revalidatePath(`/players/${d.playerId}`);
   redirect(`/players/${d.playerId}?tab=movements`);
 }
 
 export async function deletePlayerMovement(id: string, playerId: string) {
-  await requireAuth();
-  await prisma.playerMovement.delete({ where: { id } });
+  const session = await requireAuth();
+  const actorRole = sessionActorRole(session);
+  await prisma.$transaction(async (tx) => {
+    await tx.playerMovement.delete({ where: { id } });
+    await tx.auditLog.create({
+      data: {
+        action: "DELETE",
+        entityType: EntityType.PlayerMovement,
+        entityId: id,
+        actorRole,
+      },
+    });
+  });
   revalidatePath(`/players/${playerId}`);
 }
+
 export type IntelFormState =
   | { ok: true }
   | { error: Record<string, string[] | undefined> }

@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { SignOutButton } from "@/components/SignOutButton";
 
-export function Shell({ children }: { children: React.ReactNode }) {
+export function Shell({
+  children,
+  isAdmin = false,
+}: {
+  children: React.ReactNode;
+  isAdmin?: boolean;
+}) {
   return (
     <div className="relative flex min-h-full flex-1 flex-col">
       <div
@@ -40,6 +46,22 @@ export function Shell({ children }: { children: React.ReactNode }) {
             >
               [ ORGANIZATIONS ]
             </Link>
+            {isAdmin && (
+              <>
+                <Link
+                  href="/audit"
+                  className="text-aegis-lime underline-offset-4 hover:underline focus:outline focus:outline-2 focus:outline-aegis-lime"
+                >
+                  [ AUDIT_LOG ]
+                </Link>
+                <Link
+                  href="/settings/blacklist"
+                  className="text-aegis-lime underline-offset-4 hover:underline focus:outline focus:outline-2 focus:outline-aegis-lime"
+                >
+                  [ NAME_BLACKLIST ]
+                </Link>
+              </>
+            )}
             <SignOutButton />
           </nav>
         </div>

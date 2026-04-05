@@ -86,6 +86,7 @@ export default async function OrganizationsPage({
                     <tr className="border-b border-[#39ff14]/40 bg-black text-[#6fdc5c]">
                       <th className="p-2 font-normal">Name</th>
                       <th className="p-2 font-normal">Updated</th>
+                      <th className="p-2 font-normal" />
                     </tr>
                   </thead>
                   <tbody>
@@ -104,6 +105,14 @@ export default async function OrganizationsPage({
                         </td>
                         <td className="p-2 font-mono text-xs text-[#6fdc5c]/90">
                           {o.updatedAt.toISOString()}
+                        </td>
+                        <td className="p-2">
+                          <Link
+                            href={`/organizations/${o.id}?tab=overview`}
+                            className="text-xs text-[#39ff14] underline-offset-2 hover:underline"
+                          >
+                            [ EDIT ]
+                          </Link>
                         </td>
                       </tr>
                     ))}

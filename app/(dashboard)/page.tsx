@@ -80,6 +80,7 @@ export default async function HomePage({
               <th className="p-2 font-normal">Name</th>
               <th className="p-2 font-normal">DOB</th>
               <th className="p-2 font-normal">Updated</th>
+              <th className="p-2 font-normal" />
             </tr>
           </thead>
           <PlayerIndexTable players={rows} />

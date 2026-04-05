@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export type PlayerIndexRow = {
@@ -18,7 +19,7 @@ export function PlayerIndexTable({ players }: { players: PlayerIndexRow[] }) {
     return (
       <tbody>
         <tr>
-          <td colSpan={4} className="p-4 text-[#6fdc5c]/70">
+          <td colSpan={5} className="p-4 text-[#6fdc5c]/70">
             no records match query.
           </td>
         </tr>
@@ -49,6 +50,16 @@ export function PlayerIndexTable({ players }: { players: PlayerIndexRow[] }) {
           <td className="p-2 text-[#6fdc5c]/90">{p.dateOfBirth}</td>
           <td className="p-2 text-[#6fdc5c]/70">
             {p.updatedAt.slice(0, 16).replace("T", " ")}
+          </td>
+          <td className="p-2">
+            <Link
+              href={`/players/${p.id}?tab=overview`}
+              className="text-xs text-[#39ff14] underline-offset-2 hover:underline"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              [ EDIT ]
+            </Link>
           </td>
         </tr>
       ))}

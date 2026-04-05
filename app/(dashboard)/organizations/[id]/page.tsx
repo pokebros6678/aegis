@@ -3,17 +3,29 @@ import { notFound } from "next/navigation";
 import { OrganizationOverviewForm } from "@/components/organization/OrganizationOverviewForm";
 import {
   createOrganizationIntel,
+  createOrganizationLocation,
   createOrganizationMember,
   createOrganizationRelation,
   deleteOrganization,
   deleteOrganizationIntel,
+  deleteOrganizationLocation,
   deleteOrganizationMember,
   deleteOrganizationRelation,
+  updateOrganizationIntel,
+  updateOrganizationLocation,
+  updateOrganizationMember,
+  updateOrganizationRelation,
 } from "@/lib/actions/organizations";
 import { ORGANIZATION_TYPE_LABELS } from "@/lib/organizationLabels";
 import { prisma } from "@/lib/prisma";
 
-const TABS = ["overview", "members", "relations", "intelligence"] as const;
+const TABS = [
+  "overview",
+  "members",
+  "relations",
+  "intelligence",
+  "locations",
+] as const;
 type Tab = (typeof TABS)[number];
 
 function tabClass(active: boolean) {
@@ -27,11 +39,21 @@ export default async function OrganizationPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    editMemberId?: string;
+    editRelationId?: string;
+    editIntelId?: string;
+    editLocationId?: string;
+  }>;
 }) {
   const { id } = await params;
-  const { tab: tabRaw } = await searchParams;
-  const tab: Tab = TABS.includes(tabRaw as Tab) ? (tabRaw as Tab) : "overview";
+  const sp = await searchParams;
+  const tab: Tab = TABS.includes(sp.tab as Tab) ? (sp.tab as Tab) : "overview";
+  const editMemberId = sp.editMemberId ?? "";
+  const editRelationId = sp.editRelationId ?? "";
+  const editIntelId = sp.editIntelId ?? "";
+  const editLocationId = sp.editLocationId ?? "";
 
   const org = await prisma.organization.findUnique({
     where: { id },
@@ -45,6 +67,7 @@ export default async function OrganizationPage({
         include: { peerOrganization: true },
       },
       intel: { orderBy: { updatedAt: "desc" } },
+      locations: { orderBy: { updatedAt: "desc" } },
     },
   });
 
@@ -62,6 +85,23 @@ export default async function OrganizationPage({
   });
 
   const tabHref = (t: Tab) => `/organizations/${id}?tab=${t}`;
+
+  const memberEditing =
+    editMemberId && org.members.some((m) => m.id === editMemberId)
+      ? org.members.find((m) => m.id === editMemberId)!
+      : null;
+  const relationEditing =
+    editRelationId && org.relations.some((r) => r.id === editRelationId)
+      ? org.relations.find((r) => r.id === editRelationId)!
+      : null;
+  const intelEditing =
+    editIntelId && org.intel.some((i) => i.id === editIntelId)
+      ? org.intel.find((i) => i.id === editIntelId)!
+      : null;
+  const locationEditing =
+    editLocationId && org.locations.some((l) => l.id === editLocationId)
+      ? org.locations.find((l) => l.id === editLocationId)!
+      : null;
 
   return (
     <div className="space-y-6">
@@ -116,6 +156,70 @@ export default async function OrganizationPage({
       {tab === "members" && (
         <section className="space-y-6">
           <h2 className="text-sm text-[#6fdc5c]">&gt; members</h2>
+          {memberEditing && (
+            <div className="space-y-2 border border-amber-500/50 p-4">
+              <p className="text-xs text-amber-400">editing record</p>
+              <form
+                action={updateOrganizationMember}
+                className="grid gap-3 sm:grid-cols-2"
+              >
+                <input type="hidden" name="organizationId" value={org.id} />
+                <input type="hidden" name="memberId" value={memberEditing.id} />
+                <div>
+                  <label className="text-xs text-[#6fdc5c]" htmlFor="mem-p-edit">
+                    Linked player (optional)
+                  </label>
+                  <select
+                    id="mem-p-edit"
+                    name="playerId"
+                    defaultValue={memberEditing.playerId ?? ""}
+                    className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
+                  >
+                    <option value="">— none —</option>
+                    {players.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.lastName}, {p.firstName} ({p.ssn})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Field
+                  htmlId="mem-a-edit"
+                  name="alias"
+                  label="Alias / street name"
+                  defaultValue={memberEditing.alias ?? ""}
+                />
+                <Field
+                  htmlId="mem-r-edit"
+                  name="role"
+                  label="Role"
+                  defaultValue={memberEditing.role ?? ""}
+                />
+                <div className="sm:col-span-2">
+                  <Field
+                    htmlId="mem-n-edit"
+                    name="notes"
+                    label="Notes"
+                    defaultValue={memberEditing.notes ?? ""}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2 sm:col-span-2">
+                  <button
+                    type="submit"
+                    className="border border-[#39ff14] px-4 py-1 text-[#39ff14] hover:bg-[#39ff14]/10"
+                  >
+                    [ SAVE ]
+                  </button>
+                  <Link
+                    href={tabHref("members")}
+                    className="border border-[#6fdc5c]/50 px-4 py-1 text-sm text-[#6fdc5c] hover:bg-[#39ff14]/10"
+                  >
+                    [ CANCEL ]
+                  </Link>
+                </div>
+              </form>
+            </div>
+          )}
           <form
             action={createOrganizationMember}
             className="grid gap-3 border border-[#39ff14]/40 p-4 sm:grid-cols-2"
@@ -139,10 +243,10 @@ export default async function OrganizationPage({
                 ))}
               </select>
             </div>
-            <Field name="alias" label="Alias / street name (if no player)" />
-            <Field name="role" label="Role" />
+            <Field htmlId="mem-a-new" name="alias" label="Alias / street name (if no player)" />
+            <Field htmlId="mem-r-new" name="role" label="Role" />
             <div className="sm:col-span-2">
-              <Field name="notes" label="Notes" />
+              <Field htmlId="mem-n-new" name="notes" label="Notes" />
             </div>
             <div className="sm:col-span-2">
               <button
@@ -161,12 +265,13 @@ export default async function OrganizationPage({
                   <th className="p-2 font-normal">Role</th>
                   <th className="p-2 font-normal">Notes</th>
                   <th className="p-2 font-normal" />
+                  <th className="p-2 font-normal" />
                 </tr>
               </thead>
               <tbody>
                 {org.members.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="p-3 text-[#6fdc5c]/70">
+                    <td colSpan={5} className="p-3 text-[#6fdc5c]/70">
                       no members on file.
                     </td>
                   </tr>
@@ -193,6 +298,14 @@ export default async function OrganizationPage({
                       </td>
                       <td className="p-2">{m.role ?? "—"}</td>
                       <td className="p-2 text-[#6fdc5c]/90">{m.notes ?? "—"}</td>
+                      <td className="p-2">
+                        <Link
+                          href={`/organizations/${id}?tab=members&editMemberId=${m.id}`}
+                          className="text-xs text-[#39ff14] hover:underline"
+                        >
+                          [ EDIT ]
+                        </Link>
+                      </td>
                       <td className="p-2">
                         <form
                           action={deleteOrganizationMember.bind(
@@ -221,6 +334,77 @@ export default async function OrganizationPage({
       {tab === "relations" && (
         <section className="space-y-6">
           <h2 className="text-sm text-[#6fdc5c]">&gt; relations</h2>
+          {relationEditing && (
+            <div className="space-y-2 border border-amber-500/50 p-4">
+              <p className="text-xs text-amber-400">editing record</p>
+              <form
+                action={updateOrganizationRelation}
+                className="grid gap-3 sm:grid-cols-2"
+              >
+                <input type="hidden" name="organizationId" value={org.id} />
+                <input
+                  type="hidden"
+                  name="relationId"
+                  value={relationEditing.id}
+                />
+                <div className="sm:col-span-2">
+                  <label className="text-xs text-[#6fdc5c]" htmlFor="peer-e">
+                    Organization on file (optional)
+                  </label>
+                  <select
+                    id="peer-e"
+                    name="peerOrganizationId"
+                    defaultValue={relationEditing.peerOrganizationId ?? ""}
+                    className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
+                  >
+                    <option value="">— none —</option>
+                    {peerOrgs.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.name} ({ORGANIZATION_TYPE_LABELS[o.type]})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <Field
+                    htmlId="rel-ext-e"
+                    name="externalLabel"
+                    label="External entity (if not on file)"
+                    defaultValue={relationEditing.externalLabel ?? ""}
+                  />
+                </div>
+                <Field
+                  htmlId="rel-k-e"
+                  name="relationKind"
+                  label="Kind (alliance, rivalry, …)"
+                  defaultValue={relationEditing.relationKind ?? ""}
+                />
+                <div />
+                <div className="sm:col-span-2">
+                  <Field
+                    htmlId="rel-n-e"
+                    name="notes"
+                    label="Notes"
+                    defaultValue={relationEditing.notes ?? ""}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2 sm:col-span-2">
+                  <button
+                    type="submit"
+                    className="border border-[#39ff14] px-4 py-1 text-[#39ff14] hover:bg-[#39ff14]/10"
+                  >
+                    [ SAVE ]
+                  </button>
+                  <Link
+                    href={tabHref("relations")}
+                    className="border border-[#6fdc5c]/50 px-4 py-1 text-sm text-[#6fdc5c] hover:bg-[#39ff14]/10"
+                  >
+                    [ CANCEL ]
+                  </Link>
+                </div>
+              </form>
+            </div>
+          )}
           <form
             action={createOrganizationRelation}
             className="grid gap-3 border border-[#39ff14]/40 p-4 sm:grid-cols-2"
@@ -246,14 +430,15 @@ export default async function OrganizationPage({
             </div>
             <div className="sm:col-span-2">
               <Field
+                htmlId="rel-ext-n"
                 name="externalLabel"
                 label="External entity (if not on file)"
               />
             </div>
-            <Field name="relationKind" label="Kind (alliance, rivalry, …)" />
+            <Field htmlId="rel-k-n" name="relationKind" label="Kind (alliance, rivalry, …)" />
             <div />
             <div className="sm:col-span-2">
-              <Field name="notes" label="Notes" />
+              <Field htmlId="rel-n-n" name="notes" label="Notes" />
             </div>
             <div className="sm:col-span-2">
               <button
@@ -272,12 +457,13 @@ export default async function OrganizationPage({
                   <th className="p-2 font-normal">Kind</th>
                   <th className="p-2 font-normal">Notes</th>
                   <th className="p-2 font-normal" />
+                  <th className="p-2 font-normal" />
                 </tr>
               </thead>
               <tbody>
                 {org.relations.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="p-3 text-[#6fdc5c]/70">
+                    <td colSpan={5} className="p-3 text-[#6fdc5c]/70">
                       no relations on file.
                     </td>
                   </tr>
@@ -301,6 +487,14 @@ export default async function OrganizationPage({
                       </td>
                       <td className="p-2">{r.relationKind ?? "—"}</td>
                       <td className="p-2 text-[#6fdc5c]/90">{r.notes ?? "—"}</td>
+                      <td className="p-2">
+                        <Link
+                          href={`/organizations/${id}?tab=relations&editRelationId=${r.id}`}
+                          className="text-xs text-[#39ff14] hover:underline"
+                        >
+                          [ EDIT ]
+                        </Link>
+                      </td>
                       <td className="p-2">
                         <form
                           action={deleteOrganizationRelation.bind(
@@ -329,28 +523,75 @@ export default async function OrganizationPage({
       {tab === "intelligence" && (
         <section className="space-y-6">
           <h2 className="text-sm text-[#6fdc5c]">&gt; intelligence</h2>
+          {intelEditing && (
+            <div className="space-y-2 border border-amber-500/50 p-4">
+              <p className="text-xs text-amber-400">editing record</p>
+              <form action={updateOrganizationIntel} className="grid gap-3">
+                <input type="hidden" name="organizationId" value={org.id} />
+                <input type="hidden" name="intelId" value={intelEditing.id} />
+                <div>
+                  <label className="text-xs text-[#6fdc5c]" htmlFor="intel-t-e">
+                    Title
+                  </label>
+                  <input
+                    id="intel-t-e"
+                    name="title"
+                    required
+                    defaultValue={intelEditing.title}
+                    className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-[#6fdc5c]" htmlFor="intel-b-e">
+                    Body
+                  </label>
+                  <textarea
+                    id="intel-b-e"
+                    name="body"
+                    rows={6}
+                    defaultValue={intelEditing.body ?? ""}
+                    className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="submit"
+                    className="border border-[#39ff14] px-4 py-1 text-[#39ff14] hover:bg-[#39ff14]/10"
+                  >
+                    [ SAVE ]
+                  </button>
+                  <Link
+                    href={tabHref("intelligence")}
+                    className="border border-[#6fdc5c]/50 px-4 py-1 text-sm text-[#6fdc5c] hover:bg-[#39ff14]/10"
+                  >
+                    [ CANCEL ]
+                  </Link>
+                </div>
+              </form>
+            </div>
+          )}
           <form
             action={createOrganizationIntel}
             className="grid gap-3 border border-[#39ff14]/40 p-4"
           >
             <input type="hidden" name="organizationId" value={org.id} />
             <div>
-              <label className="text-xs text-[#6fdc5c]" htmlFor="title">
+              <label className="text-xs text-[#6fdc5c]" htmlFor="intel-t-n">
                 Title
               </label>
               <input
-                id="title"
+                id="intel-t-n"
                 name="title"
                 required
                 className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
               />
             </div>
             <div>
-              <label className="text-xs text-[#6fdc5c]" htmlFor="body">
+              <label className="text-xs text-[#6fdc5c]" htmlFor="intel-b-n">
                 Body
               </label>
               <textarea
-                id="body"
+                id="intel-b-n"
                 name="body"
                 rows={6}
                 className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
@@ -371,12 +612,13 @@ export default async function OrganizationPage({
                   <th className="p-2 font-normal">Body</th>
                   <th className="p-2 font-normal">Updated</th>
                   <th className="p-2 font-normal" />
+                  <th className="p-2 font-normal" />
                 </tr>
               </thead>
               <tbody>
                 {org.intel.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="p-3 text-[#6fdc5c]/70">
+                    <td colSpan={5} className="p-3 text-[#6fdc5c]/70">
                       no intelligence entries on file.
                     </td>
                   </tr>
@@ -394,10 +636,217 @@ export default async function OrganizationPage({
                         {row.updatedAt.toISOString()}
                       </td>
                       <td className="p-2 align-top">
+                        <Link
+                          href={`/organizations/${id}?tab=intelligence&editIntelId=${row.id}`}
+                          className="text-xs text-[#39ff14] hover:underline"
+                        >
+                          [ EDIT ]
+                        </Link>
+                      </td>
+                      <td className="p-2 align-top">
                         <form
                           action={deleteOrganizationIntel.bind(
                             null,
                             row.id,
+                            org.id,
+                          )}
+                        >
+                          <button
+                            type="submit"
+                            className="text-xs text-red-400 hover:underline"
+                          >
+                            [ DEL ]
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {tab === "locations" && (
+        <section className="space-y-6">
+          <h2 className="text-sm text-[#6fdc5c]">&gt; locations / properties</h2>
+          {locationEditing && (
+            <div className="space-y-2 border border-amber-500/50 p-4">
+              <p className="text-xs text-amber-400">editing record</p>
+              <form
+                action={updateOrganizationLocation}
+                className="grid gap-3 sm:grid-cols-2"
+              >
+                <input type="hidden" name="organizationId" value={org.id} />
+                <input
+                  type="hidden"
+                  name="locationId"
+                  value={locationEditing.id}
+                />
+                <div className="sm:col-span-2">
+                  <Field
+                    htmlId="loc-l-e"
+                    name="label"
+                    label="Label"
+                    required
+                    defaultValue={locationEditing.label}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="text-xs text-[#6fdc5c]" htmlFor="loc-addr-e">
+                    Address
+                  </label>
+                  <textarea
+                    id="loc-addr-e"
+                    name="address"
+                    rows={3}
+                    defaultValue={locationEditing.address ?? ""}
+                    className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
+                  />
+                </div>
+                <Field
+                  htmlId="loc-k-e"
+                  name="kind"
+                  label="Kind (safehouse, business, …)"
+                  defaultValue={locationEditing.kind ?? ""}
+                />
+                <div>
+                  <label className="text-xs text-[#6fdc5c]" htmlFor="loc-acq-e">
+                    Acquired
+                  </label>
+                  <input
+                    id="loc-acq-e"
+                    name="acquiredAt"
+                    type="date"
+                    defaultValue={
+                      locationEditing.acquiredAt
+                        ? locationEditing.acquiredAt
+                            .toISOString()
+                            .slice(0, 10)
+                        : ""
+                    }
+                    className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Field
+                    htmlId="loc-n-e"
+                    name="notes"
+                    label="Notes"
+                    defaultValue={locationEditing.notes ?? ""}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2 sm:col-span-2">
+                  <button
+                    type="submit"
+                    className="border border-[#39ff14] px-4 py-1 text-[#39ff14] hover:bg-[#39ff14]/10"
+                  >
+                    [ SAVE ]
+                  </button>
+                  <Link
+                    href={tabHref("locations")}
+                    className="border border-[#6fdc5c]/50 px-4 py-1 text-sm text-[#6fdc5c] hover:bg-[#39ff14]/10"
+                  >
+                    [ CANCEL ]
+                  </Link>
+                </div>
+              </form>
+            </div>
+          )}
+          <form
+            action={createOrganizationLocation}
+            className="grid gap-3 border border-[#39ff14]/40 p-4 sm:grid-cols-2"
+          >
+            <input type="hidden" name="organizationId" value={org.id} />
+            <div className="sm:col-span-2">
+              <Field htmlId="loc-l-n" name="label" label="Label" required />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-xs text-[#6fdc5c]" htmlFor="loc-addr-n">
+                Address
+              </label>
+              <textarea
+                id="loc-addr-n"
+                name="address"
+                rows={3}
+                className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
+              />
+            </div>
+            <Field htmlId="loc-k-n" name="kind" label="Kind (safehouse, business, …)" />
+            <div>
+              <label className="text-xs text-[#6fdc5c]" htmlFor="loc-acq-n">
+                Acquired
+              </label>
+              <input
+                id="loc-acq-n"
+                name="acquiredAt"
+                type="date"
+                className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Field htmlId="loc-n-n" name="notes" label="Notes" />
+            </div>
+            <div className="sm:col-span-2">
+              <button
+                type="submit"
+                className="border border-[#39ff14] px-4 py-1 text-[#39ff14] hover:bg-[#39ff14]/10"
+              >
+                [ ADD_LOCATION ]
+              </button>
+            </div>
+          </form>
+          <div className="overflow-x-auto border border-[#39ff14]/40">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#39ff14]/40 text-[#6fdc5c]">
+                  <th className="p-2 font-normal">Label</th>
+                  <th className="p-2 font-normal">Kind</th>
+                  <th className="p-2 font-normal">Address</th>
+                  <th className="p-2 font-normal">Acquired</th>
+                  <th className="p-2 font-normal">Notes</th>
+                  <th className="p-2 font-normal" />
+                  <th className="p-2 font-normal" />
+                </tr>
+              </thead>
+              <tbody>
+                {org.locations.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-3 text-[#6fdc5c]/70">
+                      no locations on file.
+                    </td>
+                  </tr>
+                ) : (
+                  org.locations.map((loc) => (
+                    <tr
+                      key={loc.id}
+                      className="border-b border-[#39ff14]/20 hover:bg-[#39ff14]/5"
+                    >
+                      <td className="p-2">{loc.label}</td>
+                      <td className="p-2">{loc.kind ?? "—"}</td>
+                      <td className="max-w-xs whitespace-pre-wrap p-2 text-[#6fdc5c]/90">
+                        {loc.address ?? "—"}
+                      </td>
+                      <td className="p-2 text-[#6fdc5c]/90">
+                        {loc.acquiredAt
+                          ? loc.acquiredAt.toISOString().slice(0, 10)
+                          : "—"}
+                      </td>
+                      <td className="p-2 text-[#6fdc5c]/90">{loc.notes ?? "—"}</td>
+                      <td className="p-2">
+                        <Link
+                          href={`/organizations/${id}?tab=locations&editLocationId=${loc.id}`}
+                          className="text-xs text-[#39ff14] hover:underline"
+                        >
+                          [ EDIT ]
+                        </Link>
+                      </td>
+                      <td className="p-2">
+                        <form
+                          action={deleteOrganizationLocation.bind(
+                            null,
+                            loc.id,
                             org.id,
                           )}
                         >
@@ -425,20 +874,26 @@ function Field({
   name,
   label,
   required,
+  defaultValue,
+  htmlId,
 }: {
   name: string;
   label: string;
   required?: boolean;
+  defaultValue?: string;
+  htmlId?: string;
 }) {
+  const id = htmlId ?? name;
   return (
     <div>
-      <label className="text-xs text-[#6fdc5c]" htmlFor={name}>
+      <label className="text-xs text-[#6fdc5c]" htmlFor={id}>
         {label}
       </label>
       <input
-        id={name}
+        id={id}
         name={name}
         required={required}
+        defaultValue={defaultValue}
         className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
       />
     </div>

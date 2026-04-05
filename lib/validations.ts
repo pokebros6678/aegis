@@ -79,6 +79,37 @@ export const organizationIntelSchema = z.object({
   body: z.string().max(8000).optional().transform((s) => s?.trim() || undefined),
 });
 
+export const organizationIntelUpdateSchema = z.object({
+  organizationId: z.string().min(1),
+  intelId: z.string().min(1),
+  title: z.string().min(1).max(200).trim(),
+  body: z.string().max(8000).optional().transform((s) => s?.trim() || undefined),
+});
+
+export const organizationLocationSchema = z.object({
+  organizationId: z.string().min(1),
+  label: z.string().min(1).max(200).trim(),
+  address: z.string().max(4000).optional().transform((s) => s?.trim() || undefined),
+  kind: z.string().max(120).optional().transform((s) => s?.trim() || undefined),
+  acquiredAt: z
+    .string()
+    .optional()
+    .transform((s) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : undefined)),
+  notes: z.string().max(2000).optional().transform((s) => s?.trim() || undefined),
+});
+
+export const organizationLocationUpdateSchema = organizationLocationSchema.extend({
+  locationId: z.string().min(1),
+});
+
+export const organizationMemberUpdateSchema = organizationMemberSchema.extend({
+  memberId: z.string().min(1),
+});
+
+export const organizationRelationUpdateSchema = organizationRelationSchema.extend({
+  relationId: z.string().min(1),
+});
+
 export const playerUpsertSchema = z.object({
   ssn: z.string().min(1).max(64).trim(),
   firstName: z.string().min(1).max(120).trim(),
@@ -94,6 +125,10 @@ export const vehicleSchema = z.object({
   notes: z.string().max(2000).optional().transform((s) => s?.trim() || undefined),
 });
 
+export const vehicleUpdateSchema = vehicleSchema.extend({
+  vehicleId: z.string().min(1),
+});
+
 export const affiliationSchema = z.object({
   playerId: z.string().min(1),
   name: z.string().min(1).max(200).trim(),
@@ -103,6 +138,10 @@ export const affiliationSchema = z.object({
     .string()
     .optional()
     .transform((s) => (s && s.length > 0 ? s : undefined)),
+});
+
+export const affiliationUpdateSchema = affiliationSchema.extend({
+  affiliationId: z.string().min(1),
 });
 
 export const employmentSchema = z.object({
@@ -118,4 +157,20 @@ export const employmentSchema = z.object({
     .optional()
     .transform((s) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : undefined)),
   notes: z.string().max(2000).optional().transform((s) => s?.trim() || undefined),
+});
+
+export const employmentUpdateSchema = employmentSchema.extend({
+  employmentId: z.string().min(1),
+});
+
+export const playerMovementSchema = z.object({
+  playerId: z.string().min(1),
+  seenAt: z.string().min(1),
+  locationDescription: z.string().min(1).max(500).trim(),
+  notes: z.string().max(2000).optional().transform((s) => s?.trim() || undefined),
+  source: z.string().max(200).optional().transform((s) => s?.trim() || undefined),
+});
+
+export const playerMovementUpdateSchema = playerMovementSchema.extend({
+  movementId: z.string().min(1),
 });

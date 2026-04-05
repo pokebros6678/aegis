@@ -29,6 +29,7 @@ model Player {
   employment             EmploymentRecord[]
   linkedFromAffiliations Affiliation[] @relation("RelatedPlayer")
   organizationMembers    OrganizationMember[]
+  movements              PlayerMovement[]
 }
 
 model Organization {
@@ -43,6 +44,7 @@ model Organization {
   relations        OrganizationRelation[] @relation("OrgRelations")
   relationsAsPeer  OrganizationRelation[] @relation("OrgRelationPeer")
   intel            OrganizationIntel[]
+  locations        OrganizationLocation[]
 }
 
 model OrganizationMember {
@@ -75,6 +77,31 @@ model OrganizationIntel {
   body           String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+}
+
+model OrganizationLocation {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  label          String
+  address        String?      @db.Text
+  kind           String?
+  acquiredAt     DateTime?    @db.Date
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model PlayerMovement {
+  id                  String   @id @default(cuid())
+  playerId            String
+  player              Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  seenAt              DateTime
+  locationDescription String
+  notes               String?
+  source              String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model Vehicle {

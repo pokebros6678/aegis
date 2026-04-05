@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PlayerIndexTable } from "@/components/player/PlayerIndexTable";
 import { prisma } from "@/lib/prisma";
 
@@ -34,13 +35,21 @@ export default async function HomePage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-normal tracking-wide">
-          <span className="text-[#6fdc5c]">aegis&gt;</span> player_index
-        </h1>
-        <p className="mt-1 text-sm text-[#6fdc5c]/80">
-          Search by SSN or name. Empty query lists recent records.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-normal tracking-wide">
+            <span className="text-[#6fdc5c]">aegis&gt;</span> player_index
+          </h1>
+          <p className="mt-1 text-sm text-[#6fdc5c]/80">
+            Search by SSN or name. Empty query lists recent records.
+          </p>
+        </div>
+        <Link
+          href="/players/new"
+          className="shrink-0 border border-[#39ff14] px-3 py-1 font-mono text-sm text-[#39ff14] hover:bg-[#39ff14]/10 focus:outline focus:outline-2 focus:outline-[#39ff14]"
+        >
+          [ NEW_RECORD ]
+        </Link>
       </div>
 
       <form method="get" className="flex flex-wrap gap-2 border border-[#39ff14]/50 bg-black p-3">

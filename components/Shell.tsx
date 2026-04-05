@@ -35,22 +35,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
               [ PLAYERS ]
             </Link>
             <Link
-              href="/players/new"
-              className="text-aegis-lime underline-offset-4 hover:underline focus:outline focus:outline-2 focus:outline-aegis-lime"
-            >
-              [ NEW_RECORD ]
-            </Link>
-            <Link
               href="/organizations"
               className="text-aegis-lime underline-offset-4 hover:underline focus:outline focus:outline-2 focus:outline-aegis-lime"
             >
               [ ORGANIZATIONS ]
-            </Link>
-            <Link
-              href="/organizations/new"
-              className="text-aegis-lime underline-offset-4 hover:underline focus:outline focus:outline-2 focus:outline-aegis-lime"
-            >
-              [ NEW_ORG ]
             </Link>
             <SignOutButton />
           </nav>

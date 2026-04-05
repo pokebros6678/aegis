@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id          String   @id @default(cuid())
+  ssn         String   @unique
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime @db.Date
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  vehicles               Vehicle[]
+  affiliations           Affiliation[] @relation("PlayerAffiliations")
+  employment             EmploymentRecord[]
+  linkedFromAffiliations Affiliation[] @relation("RelatedPlayer")
+}
+
+model Vehicle {
+  id       String  @id @default(cuid())
+  playerId String
+  player   Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  plate    String?
+  model    String?
+  color    String?
+  notes    String?
+}
+
+model Affiliation {
+  id                String  @id @default(cuid())
+  playerId          String
+  player            Player  @relation("PlayerAffiliations", fields: [playerId], references: [id], onDelete: Cascade)
+  name              String
+  role              String?
+  notes             String?
+  relatedPlayerId   String?
+  relatedPlayer     Player? @relation("RelatedPlayer", fields: [relatedPlayerId], references: [id], onDelete: SetNull)
+}
+
+model EmploymentRecord {
+  id        String    @id @default(cuid())
+  playerId  String
+  player    Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  employer  String
+  title     String?
+  startDate DateTime? @db.Date
+  endDate   DateTime? @db.Date
+  notes     String?
+}

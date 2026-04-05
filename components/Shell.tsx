@@ -37,6 +37,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
             >
               [ NEW_RECORD ]
             </Link>
+            <Link
+              href="/organizations"
+              className="text-aegis-lime underline-offset-4 hover:underline focus:outline focus:outline-2 focus:outline-aegis-lime"
+            >
+              [ ORGANIZATIONS ]
+            </Link>
+            <Link
+              href="/organizations/new"
+              className="text-aegis-lime underline-offset-4 hover:underline focus:outline focus:outline-2 focus:outline-aegis-lime"
+            >
+              [ NEW_ORG ]
+            </Link>
             <SignOutButton />
           </nav>
         </div>

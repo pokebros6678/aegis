@@ -7,6 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum OrganizationType {
+  MILITIA
+  CRIME_FAMILY
+  STREET_GANG
+  MOTORCYCLE_CLUB
+  CARTEL
+}
+
 model Player {
   id          String   @id @default(cuid())
   ssn         String   @unique
@@ -20,6 +28,53 @@ model Player {
   affiliations           Affiliation[] @relation("PlayerAffiliations")
   employment             EmploymentRecord[]
   linkedFromAffiliations Affiliation[] @relation("RelatedPlayer")
+  organizationMembers    OrganizationMember[]
+}
+
+model Organization {
+  id        String           @id @default(cuid())
+  name      String
+  type      OrganizationType
+  notes     String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  members          OrganizationMember[]
+  relations        OrganizationRelation[] @relation("OrgRelations")
+  relationsAsPeer  OrganizationRelation[] @relation("OrgRelationPeer")
+  intel            OrganizationIntel[]
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  playerId       String?
+  player         Player?      @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  alias          String?
+  role           String?
+  notes          String?
+}
+
+model OrganizationRelation {
+  id                   String        @id @default(cuid())
+  organizationId       String
+  organization         Organization  @relation("OrgRelations", fields: [organizationId], references: [id], onDelete: Cascade)
+  peerOrganizationId   String?
+  peerOrganization     Organization? @relation("OrgRelationPeer", fields: [peerOrganizationId], references: [id], onDelete: SetNull)
+  externalLabel        String?
+  relationKind         String?
+  notes                String?
+}
+
+model OrganizationIntel {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String
+  body           String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 model Vehicle {

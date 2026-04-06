@@ -4,14 +4,31 @@
  *   ADMIN_USERNAME=alice ADMIN_PASSWORD='secret' node scripts/create-admin.cjs
  *
  * Exits non-zero if any staff user already exists or env is missing.
+ * After git pull, run `npm ci` (or `npm install`) so bcryptjs/dotenv are installed.
  */
 const path = require("path");
-const { config } = require("dotenv");
 
+function requireOrExit(spec, humanName) {
+  try {
+    return require(spec);
+  } catch (e) {
+    if (e && e.code === "MODULE_NOT_FOUND") {
+      console.error(
+        `create-admin: missing dependency "${humanName}". From the repo root run:\n` +
+          `  npm ci\n` +
+          `then retry create-admin (see README Staff accounts).`,
+      );
+      process.exit(1);
+    }
+    throw e;
+  }
+}
+
+const { config } = requireOrExit("dotenv", "dotenv");
 config({ path: path.join(__dirname, "..", ".env") });
 
-const { PrismaClient } = require("@prisma/client");
-const bcrypt = require("bcryptjs");
+const bcrypt = requireOrExit("bcryptjs", "bcryptjs");
+const { PrismaClient } = requireOrExit("@prisma/client", "@prisma/client");
 
 const prisma = new PrismaClient();
 

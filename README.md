@@ -6,9 +6,11 @@ To expose AEGIS on the internet without port-forwarding, use Cloudflare Tunnel. 
 
 ## Staff accounts (login)
 
-Logins are **per-user** in Postgres (`StaffUser`: username, bcrypt password, `ADMIN` or `MEMBER`). After migrations, create the first administrator on the machine that has `DATABASE_URL` and `.env`:
+Logins are **per-user** in Postgres (`StaffUser`: username, bcrypt password, `ADMIN` or `MEMBER`). After **`git pull`**, install dependencies before bootstrap (pull updates `package.json`):
 
 ```bash
+npm ci
+npx prisma migrate deploy
 ADMIN_USERNAME=yourname ADMIN_PASSWORD='your-secure-password' npm run create-admin
 ```
 

@@ -6,6 +6,7 @@ import { useState } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -16,6 +17,7 @@ export default function LoginPage() {
     setBusy(true);
     try {
       const res = await signIn("credentials", {
+        username: username.trim(),
         password,
         redirect: false,
       });
@@ -45,8 +47,21 @@ export default function LoginPage() {
           <span className="text-[#39ff14]">calirp://</span>aegis auth required
         </p>
         <div>
+          <label htmlFor="username" className="text-xs text-[#6fdc5c]">
+            username
+          </label>
+          <input
+            id="username"
+            type="text"
+            autoComplete="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-2 text-[#39ff14]"
+          />
+        </div>
+        <div>
           <label htmlFor="password" className="text-xs text-[#6fdc5c]">
-            member_or_admin_password
+            password
           </label>
           <input
             id="password"

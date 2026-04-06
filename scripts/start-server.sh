@@ -13,7 +13,7 @@
 #   HOST=0.0.0.0     — bind address (default 0.0.0.0 for LAN/VPS)
 #   NODE_ENV=production — set automatically if unset
 #
-# Requires a populated .env (see .env.example): DATABASE_URL, AUTH_SECRET, tiered passwords.
+# Requires a populated .env (see .env.example): DATABASE_URL, AUTH_SECRET, and staff users in DB (npm run create-admin once).
 # For HTTPS / correct auth callbacks in production, set AUTH_URL (e.g. https://aegis.example.com).
 
 set -euo pipefail
@@ -27,7 +27,7 @@ HOST="${HOST:-0.0.0.0}"
 
 if [[ ! -f .env ]]; then
   echo "start-server: error: .env not found in $ROOT" >&2
-  echo "  Copy .env.example to .env and set DATABASE_URL, AUTH_SECRET, AEGIS_ADMIN_PASSWORD, AEGIS_MEMBER_PASSWORD." >&2
+  echo "  Copy .env.example to .env and set DATABASE_URL, AUTH_SECRET; run npm run create-admin for first login." >&2
   exit 1
 fi
 

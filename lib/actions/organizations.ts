@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin, requireAuth, sessionActorRole } from "@/lib/authz";
+import { auditActorMeta, requireAdmin, requireAuth } from "@/lib/authz";
 import { EntityType } from "@/lib/audit-log";
 import { isNameBlacklisted } from "@/lib/blacklist";
 import { prisma } from "@/lib/prisma";
@@ -21,7 +21,7 @@ import type { OrganizationType } from "@prisma/client";
 
 export async function createOrganization(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = organizationUpsertSchema.safeParse({
     name: formData.get("name"),
     type: formData.get("type"),
@@ -45,7 +45,7 @@ export async function createOrganization(formData: FormData) {
         action: "CREATE",
         entityType: EntityType.Organization,
         entityId: created.id,
-        actorRole,
+          ...actor,
       },
     });
     return created;
@@ -56,7 +56,7 @@ export async function createOrganization(formData: FormData) {
 
 export async function updateOrganization(organizationId: string, formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = organizationUpsertSchema.safeParse({
     name: formData.get("name"),
     type: formData.get("type"),
@@ -87,7 +87,7 @@ export async function updateOrganization(organizationId: string, formData: FormD
         action: "UPDATE",
         entityType: EntityType.Organization,
         entityId: organizationId,
-        actorRole,
+          ...actor,
       },
     });
   });
@@ -98,7 +98,7 @@ export async function updateOrganization(organizationId: string, formData: FormD
 
 export async function deleteOrganization(organizationId: string) {
   const session = await requireAdmin();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   await prisma.$transaction(async (tx) => {
     await tx.organization.delete({ where: { id: organizationId } });
     await tx.auditLog.create({
@@ -106,7 +106,7 @@ export async function deleteOrganization(organizationId: string) {
         action: "DELETE",
         entityType: EntityType.Organization,
         entityId: organizationId,
-        actorRole,
+          ...actor,
       },
     });
   });
@@ -116,7 +116,7 @@ export async function deleteOrganization(organizationId: string) {
 
 export async function createOrganizationMember(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = organizationMemberSchema.safeParse({
     organizationId: formData.get("organizationId"),
     playerId: formData.get("playerId") ?? undefined,
@@ -141,7 +141,7 @@ export async function createOrganizationMember(formData: FormData) {
         action: "CREATE",
         entityType: EntityType.OrganizationMember,
         entityId: m.id,
-        actorRole,
+          ...actor,
       },
     });
   });
@@ -150,7 +150,7 @@ export async function createOrganizationMember(formData: FormData) {
 
 export async function deleteOrganizationMember(id: string, organizationId: string) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   await prisma.$transaction(async (tx) => {
     await tx.organizationMember.delete({ where: { id } });
     await tx.auditLog.create({
@@ -158,7 +158,7 @@ export async function deleteOrganizationMember(id: string, organizationId: strin
         action: "DELETE",
         entityType: EntityType.OrganizationMember,
         entityId: id,
-        actorRole,
+          ...actor,
       },
     });
   });
@@ -167,7 +167,7 @@ export async function deleteOrganizationMember(id: string, organizationId: strin
 
 export async function updateOrganizationMember(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = organizationMemberUpdateSchema.safeParse({
     organizationId: formData.get("organizationId"),
     memberId: formData.get("memberId"),
@@ -197,7 +197,7 @@ export async function updateOrganizationMember(formData: FormData) {
         action: "UPDATE",
         entityType: EntityType.OrganizationMember,
         entityId: d.memberId,
-        actorRole,
+          ...actor,
       },
     });
   });
@@ -207,7 +207,7 @@ export async function updateOrganizationMember(formData: FormData) {
 
 export async function createOrganizationRelation(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = organizationRelationSchema.safeParse({
     organizationId: formData.get("organizationId"),
     peerOrganizationId: formData.get("peerOrganizationId") ?? undefined,
@@ -232,7 +232,7 @@ export async function createOrganizationRelation(formData: FormData) {
         action: "CREATE",
         entityType: EntityType.OrganizationRelation,
         entityId: r.id,
-        actorRole,
+          ...actor,
       },
     });
   });
@@ -241,7 +241,7 @@ export async function createOrganizationRelation(formData: FormData) {
 
 export async function deleteOrganizationRelation(id: string, organizationId: string) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   await prisma.$transaction(async (tx) => {
     await tx.organizationRelation.delete({ where: { id } });
     await tx.auditLog.create({
@@ -249,7 +249,7 @@ export async function deleteOrganizationRelation(id: string, organizationId: str
         action: "DELETE",
         entityType: EntityType.OrganizationRelation,
         entityId: id,
-        actorRole,
+          ...actor,
       },
     });
   });
@@ -258,7 +258,7 @@ export async function deleteOrganizationRelation(id: string, organizationId: str
 
 export async function updateOrganizationRelation(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = organizationRelationUpdateSchema.safeParse({
     organizationId: formData.get("organizationId"),
     relationId: formData.get("relationId"),
@@ -288,7 +288,7 @@ export async function updateOrganizationRelation(formData: FormData) {
         action: "UPDATE",
         entityType: EntityType.OrganizationRelation,
         entityId: d.relationId,
-        actorRole,
+          ...actor,
       },
     });
   });
@@ -298,7 +298,7 @@ export async function updateOrganizationRelation(formData: FormData) {
 
 export async function createOrganizationIntel(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = organizationIntelSchema.safeParse({
     organizationId: formData.get("organizationId"),
     title: formData.get("title"),
@@ -319,7 +319,7 @@ export async function createOrganizationIntel(formData: FormData) {
         action: "CREATE",
         entityType: EntityType.OrganizationIntel,
         entityId: i.id,
-        actorRole,
+          ...actor,
       },
     });
   });
@@ -328,7 +328,7 @@ export async function createOrganizationIntel(formData: FormData) {
 
 export async function deleteOrganizationIntel(id: string, organizationId: string) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   await prisma.$transaction(async (tx) => {
     await tx.organizationIntel.delete({ where: { id } });
     await tx.auditLog.create({
@@ -336,7 +336,7 @@ export async function deleteOrganizationIntel(id: string, organizationId: string
         action: "DELETE",
         entityType: EntityType.OrganizationIntel,
         entityId: id,
-        actorRole,
+          ...actor,
       },
     });
   });
@@ -345,7 +345,7 @@ export async function deleteOrganizationIntel(id: string, organizationId: string
 
 export async function updateOrganizationIntel(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = organizationIntelUpdateSchema.safeParse({
     organizationId: formData.get("organizationId"),
     intelId: formData.get("intelId"),
@@ -368,7 +368,7 @@ export async function updateOrganizationIntel(formData: FormData) {
         action: "UPDATE",
         entityType: EntityType.OrganizationIntel,
         entityId: d.intelId,
-        actorRole,
+          ...actor,
       },
     });
   });
@@ -378,7 +378,7 @@ export async function updateOrganizationIntel(formData: FormData) {
 
 export async function createOrganizationLocation(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = organizationLocationSchema.safeParse({
     organizationId: formData.get("organizationId"),
     label: formData.get("label"),
@@ -407,7 +407,7 @@ export async function createOrganizationLocation(formData: FormData) {
         action: "CREATE",
         entityType: EntityType.OrganizationLocation,
         entityId: loc.id,
-        actorRole,
+          ...actor,
       },
     });
   });
@@ -416,7 +416,7 @@ export async function createOrganizationLocation(formData: FormData) {
 
 export async function updateOrganizationLocation(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = organizationLocationUpdateSchema.safeParse({
     organizationId: formData.get("organizationId"),
     locationId: formData.get("locationId"),
@@ -450,7 +450,7 @@ export async function updateOrganizationLocation(formData: FormData) {
         action: "UPDATE",
         entityType: EntityType.OrganizationLocation,
         entityId: d.locationId,
-        actorRole,
+          ...actor,
       },
     });
   });
@@ -460,7 +460,7 @@ export async function updateOrganizationLocation(formData: FormData) {
 
 export async function deleteOrganizationLocation(id: string, organizationId: string) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   await prisma.$transaction(async (tx) => {
     await tx.organizationLocation.delete({ where: { id } });
     await tx.auditLog.create({
@@ -468,7 +468,7 @@ export async function deleteOrganizationLocation(id: string, organizationId: str
         action: "DELETE",
         entityType: EntityType.OrganizationLocation,
         entityId: id,
-        actorRole,
+          ...actor,
       },
     });
   });

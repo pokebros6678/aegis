@@ -2,14 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin, sessionActorRole } from "@/lib/authz";
+import { auditActorMeta, requireAdmin } from "@/lib/authz";
 import { normalizeBlacklistPhrase } from "@/lib/blacklist";
 import { EntityType } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 
 export async function addNameBlacklistPhrase(formData: FormData) {
   const session = await requireAdmin();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const raw = String(formData.get("phrase") ?? "").trim();
   const phraseNormalized = normalizeBlacklistPhrase(raw);
   if (!phraseNormalized) redirect("/settings/blacklist?e=empty");
@@ -23,7 +23,7 @@ export async function addNameBlacklistPhrase(formData: FormData) {
           action: "CREATE",
           entityType: EntityType.NameBlacklist,
           entityId: row.id,
-          actorRole,
+          ...actor,
         },
       });
     });
@@ -36,7 +36,7 @@ export async function addNameBlacklistPhrase(formData: FormData) {
 
 export async function deleteNameBlacklistPhrase(id: string) {
   const session = await requireAdmin();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   await prisma.$transaction(async (tx) => {
     await tx.nameBlacklist.delete({ where: { id } });
     await tx.auditLog.create({
@@ -44,7 +44,7 @@ export async function deleteNameBlacklistPhrase(id: string) {
         action: "DELETE",
         entityType: EntityType.NameBlacklist,
         entityId: id,
-        actorRole,
+        ...actor,
       },
     });
   });

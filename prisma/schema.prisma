@@ -26,13 +26,33 @@ enum AuditActorRole {
   ADMIN
 }
 
+enum StaffRole {
+  ADMIN
+  MEMBER
+}
+
+model StaffUser {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  passwordHash String
+  role         StaffRole
+  disabled     Boolean   @default(false)
+  displayName  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  auditLogs AuditLog[]
+}
+
 model AuditLog {
-  id         String          @id @default(cuid())
-  createdAt  DateTime        @default(now())
-  action     AuditLogAction
-  entityType String
-  entityId   String
-  actorRole  AuditActorRole
+  id          String          @id @default(cuid())
+  createdAt   DateTime        @default(now())
+  action      AuditLogAction
+  entityType  String
+  entityId    String
+  actorRole   AuditActorRole
+  actorUserId String?
+  actorUser   StaffUser?      @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
 }
 
 model NameBlacklist {

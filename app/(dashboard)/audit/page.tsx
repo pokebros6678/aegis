@@ -10,6 +10,9 @@ export default async function AuditPage() {
   const rows = await prisma.auditLog.findMany({
     orderBy: { createdAt: "desc" },
     take: 200,
+    include: {
+      actorUser: { select: { username: true } },
+    },
   });
 
   return (
@@ -19,7 +22,7 @@ export default async function AuditPage() {
           <span className="text-[#6fdc5c]">aegis&gt;</span> audit_log
         </h1>
         <p className="mt-1 font-mono text-xs text-[#6fdc5c]/80">
-          Last 200 mutation events (role tier only; no per-user identity).
+          Last 200 mutation events (staff username when known, plus role tier).
         </p>
         <Link href="/" className="mt-2 inline-block text-xs text-[#6fdc5c] hover:underline">
           &larr; [ INDEX ]
@@ -34,13 +37,14 @@ export default async function AuditPage() {
               <th className="p-2">action</th>
               <th className="p-2">entity</th>
               <th className="p-2">id</th>
-              <th className="p-2">actor</th>
+              <th className="p-2">user</th>
+              <th className="p-2">role</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-4 text-[#6fdc5c]/70">
+                <td colSpan={6} className="p-4 text-[#6fdc5c]/70">
                   [ NO_ENTRIES ]
                 </td>
               </tr>
@@ -56,6 +60,9 @@ export default async function AuditPage() {
                   <td className="p-2">{r.action}</td>
                   <td className="p-2">{r.entityType}</td>
                   <td className="p-2 break-all">{r.entityId}</td>
+                  <td className="p-2">
+                    {r.actorUser?.username ?? "—"}
+                  </td>
                   <td className="p-2">{r.actorRole}</td>
                 </tr>
               ))

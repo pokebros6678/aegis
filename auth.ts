@@ -1,16 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-
-function resolveStaffRole(password: string): "admin" | "member" | null {
-  const adminPw = process.env.AEGIS_ADMIN_PASSWORD;
-  const memberPw = process.env.AEGIS_MEMBER_PASSWORD;
-  const legacyPw = process.env.AEGIS_STAFF_PASSWORD;
-
-  if (adminPw && password === adminPw) return "admin";
-  if (!adminPw && legacyPw && password === legacyPw) return "admin";
-  if (memberPw && password === memberPw) return "member";
-  return null;
-}
+import { normalizeUsername, verifyPassword } from "@/lib/passwords";
+import { prisma } from "@/lib/prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -19,17 +10,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       id: "credentials",
       name: "Staff",
       credentials: {
+        username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      authorize(credentials) {
+      async authorize(credentials) {
+        const usernameRaw = credentials?.username;
         const password = credentials?.password as string | undefined;
-        if (password == null) return null;
-        const role = resolveStaffRole(password);
-        if (!role) return null;
+        if (
+          usernameRaw == null ||
+          typeof usernameRaw !== "string" ||
+          password == null
+        ) {
+          return null;
+        }
+        const username = normalizeUsername(usernameRaw);
+        if (!username) return null;
+
+        const user = await prisma.staffUser.findUnique({
+          where: { username },
+        });
+        if (!user || user.disabled) return null;
+
+        const ok = await verifyPassword(password, user.passwordHash);
+        if (!ok) return null;
+
         return {
-          id: role === "admin" ? "staff-admin" : "staff-member",
-          name: role === "admin" ? "AEGIS Admin" : "AEGIS Member",
-          role,
+          id: user.id,
+          name: user.displayName?.trim() || user.username,
+          role: user.role === "ADMIN" ? "admin" : "member",
         };
       },
     }),
@@ -40,13 +48,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt", maxAge: 60 * 60 * 8 },
   callbacks: {
     jwt({ token, user }) {
-      if (user?.role) token.role = user.role;
+      if (user) {
+        token.role = user.role;
+        token.sub = user.id;
+      }
       return token;
     },
     session({ session, token }) {
       const r = token.role;
       session.user.role =
         r === "admin" || r === "member" ? r : "member";
+      if (token.sub) {
+        session.user.id = token.sub;
+      }
       return session;
     },
   },

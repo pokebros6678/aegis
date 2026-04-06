@@ -174,3 +174,48 @@ export const playerMovementSchema = z.object({
 export const playerMovementUpdateSchema = playerMovementSchema.extend({
   movementId: z.string().min(1),
 });
+
+export const staffRoleValues = ["ADMIN", "MEMBER"] as const;
+
+export const staffUserCreateSchema = z.object({
+  username: z
+    .string()
+    .min(2)
+    .max(64)
+    .trim()
+    .transform((s) => s.toLowerCase())
+    .refine((s) => /^[a-z0-9._-]+$/.test(s), {
+      message: "Username: letters, numbers, . _ - only",
+    }),
+  password: z.string().min(8).max(200),
+  displayName: z
+    .string()
+    .max(120)
+    .optional()
+    .transform((s) => s?.trim() || undefined),
+  role: z.enum(staffRoleValues),
+});
+
+export const staffUserUpdateSchema = z.object({
+  userId: z.string().min(1),
+  displayName: z
+    .string()
+    .max(120)
+    .optional()
+    .transform((s) => {
+      const t = s?.trim();
+      return t && t.length > 0 ? t : undefined;
+    }),
+  role: z.enum(staffRoleValues),
+});
+
+export const staffUserPasswordSchema = z
+  .object({
+    userId: z.string().min(1),
+    password: z.string().min(8).max(200),
+    passwordConfirm: z.string().min(8).max(200),
+  })
+  .refine((d) => d.password === d.passwordConfirm, {
+    message: "Passwords do not match",
+    path: ["passwordConfirm"],
+  });

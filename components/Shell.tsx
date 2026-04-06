@@ -60,6 +60,12 @@ export function Shell({
                 >
                   [ NAME_BLACKLIST ]
                 </Link>
+                <Link
+                  href="/settings/users"
+                  className="text-aegis-lime underline-offset-4 hover:underline focus:outline focus:outline-2 focus:outline-aegis-lime"
+                >
+                  [ USERS ]
+                </Link>
               </>
             )}
             <SignOutButton />

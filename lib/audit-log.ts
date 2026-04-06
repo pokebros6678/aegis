@@ -10,4 +10,5 @@ export const EntityType = {
   OrganizationIntel: "OrganizationIntel",
   OrganizationLocation: "OrganizationLocation",
   NameBlacklist: "NameBlacklist",
+  StaffUser: "StaffUser",
 } as const;

@@ -4,6 +4,16 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 To expose AEGIS on the internet without port-forwarding, use Cloudflare Tunnel. Set **`AUTH_URL`** in `.env` to your public `https://` URL. Keep tunnel ingress in **`~/aegis/cloudflare/config.yml`** (from [cloudflare/config.example.yml](cloudflare/config.example.yml)); on the VM run **`npm run tunnel`** from the repo or `cloudflared tunnel --config ~/aegis/cloudflare/config.yml run`. Full steps: [cloudflare/SETUP.md](cloudflare/SETUP.md).
 
+## Staff accounts (login)
+
+Logins are **per-user** in Postgres (`StaffUser`: username, bcrypt password, `ADMIN` or `MEMBER`). After migrations, create the first administrator on the machine that has `DATABASE_URL` and `.env`:
+
+```bash
+ADMIN_USERNAME=yourname ADMIN_PASSWORD='your-secure-password' npm run create-admin
+```
+
+Then sign in at `/login` with that username and password. Additional users and password resets: **`[ USERS ]`** in the header (admins only).
+
 ## Deploy updates (self-hosted VM)
 
 On the server, from the repo (e.g. `~/aegis`):

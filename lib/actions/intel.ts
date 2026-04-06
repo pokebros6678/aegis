@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin, requireAuth, sessionActorRole } from "@/lib/authz";
+import { auditActorMeta, requireAdmin, requireAuth } from "@/lib/authz";
 import { EntityType } from "@/lib/audit-log";
 import { isNameBlacklisted } from "@/lib/blacklist";
 import { prisma } from "@/lib/prisma";
@@ -20,7 +20,7 @@ import {
 
 export async function createPlayer(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = playerUpsertSchema.safeParse({
     ssn: formData.get("ssn"),
     firstName: formData.get("firstName"),
@@ -49,7 +49,7 @@ export async function createPlayer(formData: FormData) {
           action: "CREATE",
           entityType: EntityType.Player,
           entityId: created.id,
-          actorRole,
+          ...actor,
         },
       });
       return created;
@@ -67,7 +67,7 @@ export async function createPlayer(formData: FormData) {
 
 export async function updatePlayer(playerId: string, formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = playerUpsertSchema.safeParse({
     ssn: formData.get("ssn"),
     firstName: formData.get("firstName"),
@@ -101,7 +101,7 @@ export async function updatePlayer(playerId: string, formData: FormData) {
           action: "UPDATE",
           entityType: EntityType.Player,
           entityId: playerId,
-          actorRole,
+          ...actor,
         },
       });
     });
@@ -119,7 +119,7 @@ export async function updatePlayer(playerId: string, formData: FormData) {
 
 export async function deletePlayer(playerId: string) {
   const session = await requireAdmin();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   await prisma.$transaction(async (tx) => {
     await tx.player.delete({ where: { id: playerId } });
     await tx.auditLog.create({
@@ -127,7 +127,7 @@ export async function deletePlayer(playerId: string) {
         action: "DELETE",
         entityType: EntityType.Player,
         entityId: playerId,
-        actorRole,
+        ...actor,
       },
     });
   });
@@ -137,7 +137,7 @@ export async function deletePlayer(playerId: string) {
 
 export async function createVehicle(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = vehicleSchema.safeParse({
     playerId: formData.get("playerId"),
     plate: formData.get("plate") ?? undefined,
@@ -162,7 +162,7 @@ export async function createVehicle(formData: FormData) {
         action: "CREATE",
         entityType: EntityType.Vehicle,
         entityId: v.id,
-        actorRole,
+        ...actor,
       },
     });
   });
@@ -171,7 +171,7 @@ export async function createVehicle(formData: FormData) {
 
 export async function deleteVehicle(id: string, playerId: string) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   await prisma.$transaction(async (tx) => {
     await tx.vehicle.delete({ where: { id } });
     await tx.auditLog.create({
@@ -179,7 +179,7 @@ export async function deleteVehicle(id: string, playerId: string) {
         action: "DELETE",
         entityType: EntityType.Vehicle,
         entityId: id,
-        actorRole,
+        ...actor,
       },
     });
   });
@@ -188,7 +188,7 @@ export async function deleteVehicle(id: string, playerId: string) {
 
 export async function updateVehicle(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = vehicleUpdateSchema.safeParse({
     playerId: formData.get("playerId"),
     vehicleId: formData.get("vehicleId"),
@@ -218,7 +218,7 @@ export async function updateVehicle(formData: FormData) {
         action: "UPDATE",
         entityType: EntityType.Vehicle,
         entityId: d.vehicleId,
-        actorRole,
+        ...actor,
       },
     });
   });
@@ -228,7 +228,7 @@ export async function updateVehicle(formData: FormData) {
 
 export async function createAffiliation(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = affiliationSchema.safeParse({
     playerId: formData.get("playerId"),
     name: formData.get("name"),
@@ -254,7 +254,7 @@ export async function createAffiliation(formData: FormData) {
         action: "CREATE",
         entityType: EntityType.Affiliation,
         entityId: a.id,
-        actorRole,
+        ...actor,
       },
     });
   });
@@ -263,7 +263,7 @@ export async function createAffiliation(formData: FormData) {
 
 export async function deleteAffiliation(id: string, playerId: string) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   await prisma.$transaction(async (tx) => {
     await tx.affiliation.delete({ where: { id } });
     await tx.auditLog.create({
@@ -271,7 +271,7 @@ export async function deleteAffiliation(id: string, playerId: string) {
         action: "DELETE",
         entityType: EntityType.Affiliation,
         entityId: id,
-        actorRole,
+        ...actor,
       },
     });
   });
@@ -280,7 +280,7 @@ export async function deleteAffiliation(id: string, playerId: string) {
 
 export async function updateAffiliation(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = affiliationUpdateSchema.safeParse({
     playerId: formData.get("playerId"),
     affiliationId: formData.get("affiliationId"),
@@ -311,7 +311,7 @@ export async function updateAffiliation(formData: FormData) {
         action: "UPDATE",
         entityType: EntityType.Affiliation,
         entityId: d.affiliationId,
-        actorRole,
+        ...actor,
       },
     });
   });
@@ -321,7 +321,7 @@ export async function updateAffiliation(formData: FormData) {
 
 export async function createEmployment(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = employmentSchema.safeParse({
     playerId: formData.get("playerId"),
     employer: formData.get("employer"),
@@ -348,7 +348,7 @@ export async function createEmployment(formData: FormData) {
         action: "CREATE",
         entityType: EntityType.EmploymentRecord,
         entityId: e.id,
-        actorRole,
+        ...actor,
       },
     });
   });
@@ -357,7 +357,7 @@ export async function createEmployment(formData: FormData) {
 
 export async function deleteEmployment(id: string, playerId: string) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   await prisma.$transaction(async (tx) => {
     await tx.employmentRecord.delete({ where: { id } });
     await tx.auditLog.create({
@@ -365,7 +365,7 @@ export async function deleteEmployment(id: string, playerId: string) {
         action: "DELETE",
         entityType: EntityType.EmploymentRecord,
         entityId: id,
-        actorRole,
+        ...actor,
       },
     });
   });
@@ -374,7 +374,7 @@ export async function deleteEmployment(id: string, playerId: string) {
 
 export async function updateEmployment(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = employmentUpdateSchema.safeParse({
     playerId: formData.get("playerId"),
     employmentId: formData.get("employmentId"),
@@ -406,7 +406,7 @@ export async function updateEmployment(formData: FormData) {
         action: "UPDATE",
         entityType: EntityType.EmploymentRecord,
         entityId: d.employmentId,
-        actorRole,
+        ...actor,
       },
     });
   });
@@ -416,7 +416,7 @@ export async function updateEmployment(formData: FormData) {
 
 export async function createPlayerMovement(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = playerMovementSchema.safeParse({
     playerId: formData.get("playerId"),
     seenAt: formData.get("seenAt"),
@@ -443,7 +443,7 @@ export async function createPlayerMovement(formData: FormData) {
         action: "CREATE",
         entityType: EntityType.PlayerMovement,
         entityId: m.id,
-        actorRole,
+        ...actor,
       },
     });
   });
@@ -452,7 +452,7 @@ export async function createPlayerMovement(formData: FormData) {
 
 export async function updatePlayerMovement(formData: FormData) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   const parsed = playerMovementUpdateSchema.safeParse({
     playerId: formData.get("playerId"),
     movementId: formData.get("movementId"),
@@ -484,7 +484,7 @@ export async function updatePlayerMovement(formData: FormData) {
         action: "UPDATE",
         entityType: EntityType.PlayerMovement,
         entityId: d.movementId,
-        actorRole,
+        ...actor,
       },
     });
   });
@@ -494,7 +494,7 @@ export async function updatePlayerMovement(formData: FormData) {
 
 export async function deletePlayerMovement(id: string, playerId: string) {
   const session = await requireAuth();
-  const actorRole = sessionActorRole(session);
+  const actor = auditActorMeta(session);
   await prisma.$transaction(async (tx) => {
     await tx.playerMovement.delete({ where: { id } });
     await tx.auditLog.create({
@@ -502,7 +502,7 @@ export async function deletePlayerMovement(id: string, playerId: string) {
         action: "DELETE",
         entityType: EntityType.PlayerMovement,
         entityId: id,
-        actorRole,
+        ...actor,
       },
     });
   });

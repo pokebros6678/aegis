@@ -1,4 +1,5 @@
 # Example systemd unit — install on the VM after cloudflared + config.yml work manually.
+# Uses the repo config only: /home/<user>/aegis/cloudflare/config.yml
 #
 #   sudo cp cloudflare/aegis-tunnel.service.example /etc/systemd/system/aegis-tunnel.service
 #   sudo nano /etc/systemd/system/aegis-tunnel.service   # fix User + paths

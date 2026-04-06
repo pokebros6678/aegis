@@ -1,0 +1,30 @@
+# Example systemd unit — keeps Next.js running after you disconnect SSH.
+#
+#   sudo cp scripts/aegis-next.service.example /etc/systemd/system/aegis-next.service
+#   sudo nano /etc/systemd/system/aegis-next.service   # fix User + paths; set ExecStart npm path if needed
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now aegis-next.service
+#
+# Requires: cd ~/aegis && npm run build (or ./scripts/start-server.sh once)
+# Uses .env from /home/REPLACE_USER/aegis/.env (Next loads it automatically).
+#
+# If `npm` is not in systemd's PATH (e.g. nvm), run `which npm` as your user and set
+# ExecStart to the full path, or use:
+#   ExecStart=/bin/bash -lc 'cd /home/REPLACE_USER/aegis && npm run start'
+
+[Unit]
+Description=AEGIS Next.js (production)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=REPLACE_USER
+WorkingDirectory=/home/REPLACE_USER/aegis
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm run start
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

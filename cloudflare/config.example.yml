@@ -1,12 +1,15 @@
 # Cloudflare Tunnel → AEGIS (Next.js on localhost:3000)
 #
+# Canonical path on the VM: ~/aegis/cloudflare/config.yml  (copy this file to config.yml there)
+#
 # 1. Create a tunnel: cloudflared tunnel create aegis
 # 2. Note the printed TUNNEL_ID and path to the credentials JSON under ~/.cloudflared/
 # 3. Route DNS (domain must be on Cloudflare), e.g.:
 #    cloudflared tunnel route dns aegis aegis.bi6calirp.xyz
 #    cloudflared tunnel route dns aegis app.bi6calirp.xyz
-# 4. Copy this file to config.yml, fill tunnel + credentials-file below
-# 5. Run: cloudflared tunnel --config /path/to/aegis/cloudflare/config.yml run
+# 4. cp config.example.yml config.yml && edit tunnel + credentials-file below
+# 5. Run: cloudflared tunnel --config ~/aegis/cloudflare/config.yml run
+#    or from ~/aegis: npm run tunnel
 #
 # See SETUP.md for full steps.
 

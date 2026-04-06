@@ -7,10 +7,13 @@
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/prebuild-prisma.cjs",
     "build": "next build",
+    "deploy": "bash scripts/deploy.sh",
     "start": "next start",
     "lint": "eslint",
     "tunnel:quick": "cloudflared tunnel --url http://127.0.0.1:3000",
+    "tunnel": "cloudflared tunnel --config cloudflare/config.yml run",
     "postinstall": "prisma generate",
     "electron": "electron .",
     "electron:dev": "concurrently -k \"next dev\" \"wait-on -t 120000 http://127.0.0.1:3000 && electron .\"",

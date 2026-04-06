@@ -2,7 +2,29 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Public HTTPS access (Cloudflare Tunnel)
 
-To expose AEGIS on the internet without port-forwarding, use Cloudflare Tunnel. Set **`AUTH_URL`** in `.env` to your public `https://` URL. Step-by-step: [cloudflare/SETUP.md](cloudflare/SETUP.md).
+To expose AEGIS on the internet without port-forwarding, use Cloudflare Tunnel. Set **`AUTH_URL`** in `.env` to your public `https://` URL. Keep tunnel ingress in **`~/aegis/cloudflare/config.yml`** (from [cloudflare/config.example.yml](cloudflare/config.example.yml)); on the VM run **`npm run tunnel`** from the repo or `cloudflared tunnel --config ~/aegis/cloudflare/config.yml run`. Full steps: [cloudflare/SETUP.md](cloudflare/SETUP.md).
+
+## Deploy updates (self-hosted VM)
+
+On the server, from the repo (e.g. `~/aegis`):
+
+```bash
+chmod +x scripts/deploy.sh   # once
+npm run deploy
+```
+
+This runs **`git pull`** (`main`, fast-forward only), **`npm ci`**, and **`npm run build`** (including Prisma validate, generate, and migrate deploy). Postgres must be running; `.env` must exist.
+
+**Optional:** restart the app automatically after deploy:
+
+```bash
+export AEGIS_RESTART_CMD='sudo systemctl restart aegis-next'
+npm run deploy
+```
+
+(Install [scripts/aegis-next.service.example](scripts/aegis-next.service.example) as `aegis-next.service` first, or use your own command.)
+
+Other env vars: `DEPLOY_BRANCH`, `SKIP_DEPLOY_PULL=1`, `SKIP_DEPLOY_INSTALL=1` — see comments in [scripts/deploy.sh](scripts/deploy.sh).
 
 ## Getting Started
 

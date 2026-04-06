@@ -6,7 +6,8 @@
 #
 # Optional environment:
 #   SKIP_BUILD=1     — skip `next build` if .next already exists
-#   SKIP_MIGRATE=1   — skip `prisma migrate deploy`
+#   SKIP_MIGRATE=1   — skip `prisma migrate deploy` (only when SKIP_BUILD=1 path)
+#   SKIP_PRISMA_MIGRATE_ON_BUILD=1 — skip migrate during `npm run build` prebuild (see scripts/prebuild-prisma.cjs)
 #   FRESH_INSTALL=1  — run `npm ci` even when node_modules exists
 #   PORT=3000        — listen port (Next.js default 3000)
 #   HOST=0.0.0.0     — bind address (default 0.0.0.0 for LAN/VPS)
@@ -45,20 +46,19 @@ else
   fi
 fi
 
-echo "start-server: prisma generate..."
-npx prisma generate
-
-if [[ "${SKIP_MIGRATE:-0}" != "1" ]]; then
-  echo "start-server: prisma migrate deploy..."
-  npx prisma migrate deploy
-else
-  echo "start-server: skipping prisma migrate deploy (SKIP_MIGRATE=1)."
-fi
-
 if [[ "${SKIP_BUILD:-0}" == "1" && -d .next ]]; then
   echo "start-server: skipping next build (SKIP_BUILD=1 and .next exists)."
+  echo "start-server: prisma validate + generate..."
+  npx prisma validate
+  npx prisma generate
+  if [[ "${SKIP_MIGRATE:-0}" != "1" ]]; then
+    echo "start-server: prisma migrate deploy..."
+    npx prisma migrate deploy
+  else
+    echo "start-server: skipping prisma migrate deploy (SKIP_MIGRATE=1)."
+  fi
 else
-  echo "start-server: next build..."
+  echo "start-server: next build (prebuild runs: prisma validate, generate, migrate deploy)..."
   npm run build
 fi
 

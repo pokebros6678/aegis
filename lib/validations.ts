@@ -6,6 +6,9 @@ export const organizationTypeValues = [
   "STREET_GANG",
   "MOTORCYCLE_CLUB",
   "CARTEL",
+  "LAW_ENFORCEMENT_AGENCY",
+  "FEDERAL_AGENCY",
+  "MILITARY_BRANCH",
 ] as const;
 
 export type OrganizationTypeValue = (typeof organizationTypeValues)[number];

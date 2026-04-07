@@ -13,6 +13,9 @@ enum OrganizationType {
   STREET_GANG
   MOTORCYCLE_CLUB
   CARTEL
+  LAW_ENFORCEMENT_AGENCY
+  FEDERAL_AGENCY
+  MILITARY_BRANCH
 }
 
 enum AuditLogAction {

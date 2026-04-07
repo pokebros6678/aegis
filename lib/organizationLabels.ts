@@ -6,6 +6,9 @@ export const ORGANIZATION_TYPE_LABELS: Record<OrganizationType, string> = {
   STREET_GANG: "Street gangs",
   MOTORCYCLE_CLUB: "Motorcycle clubs",
   CARTEL: "Cartels",
+  LAW_ENFORCEMENT_AGENCY: "Law enforcement agencies",
+  FEDERAL_AGENCY: "Federal agencies",
+  MILITARY_BRANCH: "Military branches",
 };
 
 export const ORGANIZATION_TYPE_ORDER: OrganizationType[] = [
@@ -14,4 +17,7 @@ export const ORGANIZATION_TYPE_ORDER: OrganizationType[] = [
   "STREET_GANG",
   "MOTORCYCLE_CLUB",
   "CARTEL",
+  "LAW_ENFORCEMENT_AGENCY",
+  "FEDERAL_AGENCY",
+  "MILITARY_BRANCH",
 ];

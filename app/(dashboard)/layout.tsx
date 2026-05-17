@@ -6,7 +6,6 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-  const isAdmin = session?.user?.role === "admin";
-  return <Shell isAdmin={isAdmin}>{children}</Shell>;
+  await auth();
+  return <Shell>{children}</Shell>;
 }

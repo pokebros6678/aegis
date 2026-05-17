@@ -30,8 +30,8 @@ type Tab = (typeof TABS)[number];
 
 function tabClass(active: boolean) {
   return active
-    ? "border-[#39ff14] text-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.2)]"
-    : "border-[#39ff14]/30 text-[#6fdc5c] hover:border-[#39ff14]/60";
+    ? "border-aegis-lime text-aegis-lime shadow-[0_0_10px_color-mix(in_srgb,var(--aegis-accent)_25%,transparent)]"
+    : "border-aegis-lime/30 text-aegis-lime-dim hover:border-aegis-lime/60";
 }
 
 function toDatetimeLocalValue(d: Date): string {

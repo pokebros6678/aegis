@@ -1,5 +1,6 @@
 "use client";
 
+import { LOGIN_ASCII_BANNER, SESSION_URI_SCHEME } from "@/lib/branding";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -35,16 +36,14 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-full flex-col items-center justify-center px-4 py-16">
       <pre className="mb-6 text-center text-[10px] text-[#6fdc5c] sm:text-xs">
-{`╔══════════════════════════════════════╗
-║       AEGIS — CaliRP // LOGIN        ║
-╚══════════════════════════════════════╝`}
+{LOGIN_ASCII_BANNER}
       </pre>
       <form
         onSubmit={onSubmit}
         className="w-full max-w-sm space-y-4 border border-[#39ff14]/50 bg-black p-6"
       >
         <p className="text-sm text-[#6fdc5c]">
-          <span className="text-[#39ff14]">calirp://</span>aegis auth required
+          <span className="text-[#39ff14]">{SESSION_URI_SCHEME}://</span>aegis auth required
         </p>
         <div>
           <label htmlFor="username" className="text-xs text-[#6fdc5c]">

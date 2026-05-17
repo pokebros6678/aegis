@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PlayerIndexTable } from "@/components/player/PlayerIndexTable";
+import { PAGE_USERS_OF_INTEREST } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
 
 export default async function HomePage({
@@ -38,10 +39,10 @@ export default async function HomePage({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-lg font-normal tracking-wide">
-            <span className="text-[#6fdc5c]">aegis&gt;</span> player_index
+            <span className="text-[#6fdc5c]">aegis&gt;</span> {PAGE_USERS_OF_INTEREST}
           </h1>
           <p className="mt-1 text-sm text-[#6fdc5c]/80">
-            Search by SSN or name. Empty query lists recent records.
+            Search users of interest by SSN or name. Empty query lists recent records.
           </p>
         </div>
         <Link

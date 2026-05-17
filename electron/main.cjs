@@ -62,7 +62,7 @@ function createWindow() {
     minWidth: 900,
     minHeight: 600,
     backgroundColor: "#000000",
-    title: "AEGIS — CaliRP",
+    title: "AEGIS — Blackbox",
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

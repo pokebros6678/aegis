@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PAGE_GROUPS_OF_INTEREST } from "@/lib/branding";
 import { prisma } from "@/lib/prisma";
 import {
   ORGANIZATION_TYPE_LABELS,
@@ -33,10 +34,10 @@ export default async function OrganizationsPage({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-lg font-normal tracking-wide">
-            <span className="text-[#6fdc5c]">aegis&gt;</span> organization_index
+            <span className="text-[#6fdc5c]">aegis&gt;</span> {PAGE_GROUPS_OF_INTEREST}
           </h1>
           <p className="mt-1 text-sm text-[#6fdc5c]/80">
-            Records grouped by type. Search filters by organization name.
+            Groups of interest grouped by type. Search filters by name.
           </p>
         </div>
         <Link

@@ -1,17 +1,22 @@
 @import "tailwindcss";
 
-@theme inline {
-  --color-aegis-bg: #000000;
-  --color-aegis-lime: #39ff14;
-  --color-aegis-lime-dim: #6fdc5c;
-  --color-aegis-dim: #3a5c3a;
-  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+:root {
+  --aegis-bg: #000000;
+  --aegis-accent: #39ff14;
+  --aegis-accent-dim: #6fdc5c;
+  --aegis-muted: #3a5c3a;
+  --background: var(--aegis-bg);
+  --foreground: var(--aegis-accent);
+  --caret-color: var(--aegis-accent);
+  --aegis-selection-mix: color-mix(in srgb, var(--aegis-accent) 35%, transparent);
 }
 
-:root {
-  --background: #000000;
-  --foreground: #39ff14;
-  --caret-color: #39ff14;
+@theme inline {
+  --color-aegis-bg: var(--aegis-bg);
+  --color-aegis-lime: var(--aegis-accent);
+  --color-aegis-lime-dim: var(--aegis-accent-dim);
+  --color-aegis-dim: var(--aegis-muted);
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
 html {
@@ -26,8 +31,8 @@ body {
 }
 
 ::selection {
-  background: rgba(57, 255, 20, 0.35);
-  color: #000;
+  background: var(--aegis-selection-mix);
+  color: var(--aegis-bg);
 }
 
 a:focus-visible,
@@ -35,6 +40,6 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #39ff14;
+  outline: 2px solid var(--aegis-accent);
   outline-offset: 2px;
 }

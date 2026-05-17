@@ -114,69 +114,41 @@ export const organizationRelationUpdateSchema = organizationRelationSchema.exten
 });
 
 export const playerUpsertSchema = z.object({
-  ssn: z.string().min(1).max(64).trim(),
-  firstName: z.string().min(1).max(120).trim(),
-  lastName: z.string().min(1).max(120).trim(),
-  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  discordId: z.string().min(1).max(64).trim(),
+  discordUser: z.string().min(1).max(120).trim(),
+  notes: z.string().max(8000).optional().transform((s) => s?.trim() || undefined),
 });
 
-export const vehicleSchema = z.object({
+const affiliationFields = {
   playerId: z.string().min(1),
-  plate: z.string().max(64).optional().transform((s) => s?.trim() || undefined),
-  model: z.string().max(120).optional().transform((s) => s?.trim() || undefined),
-  color: z.string().max(64).optional().transform((s) => s?.trim() || undefined),
-  notes: z.string().max(2000).optional().transform((s) => s?.trim() || undefined),
-});
-
-export const vehicleUpdateSchema = vehicleSchema.extend({
-  vehicleId: z.string().min(1),
-});
-
-export const affiliationSchema = z.object({
-  playerId: z.string().min(1),
-  name: z.string().min(1).max(200).trim(),
+  organizationId: z
+    .string()
+    .optional()
+    .transform((s) => (s && s.length > 0 ? s : undefined)),
   role: z.string().max(120).optional().transform((s) => s?.trim() || undefined),
   notes: z.string().max(2000).optional().transform((s) => s?.trim() || undefined),
   relatedPlayerId: z
     .string()
     .optional()
     .transform((s) => (s && s.length > 0 ? s : undefined)),
-});
+};
 
-export const affiliationUpdateSchema = affiliationSchema.extend({
-  affiliationId: z.string().min(1),
-});
+export const affiliationSchema = z
+  .object(affiliationFields)
+  .refine((d) => Boolean(d.organizationId) || Boolean(d.relatedPlayerId), {
+    message: "Select a related group and/or linked profile",
+    path: ["organizationId"],
+  });
 
-export const employmentSchema = z.object({
-  playerId: z.string().min(1),
-  employer: z.string().min(1).max(200).trim(),
-  title: z.string().max(120).optional().transform((s) => s?.trim() || undefined),
-  startDate: z
-    .string()
-    .optional()
-    .transform((s) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : undefined)),
-  endDate: z
-    .string()
-    .optional()
-    .transform((s) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : undefined)),
-  notes: z.string().max(2000).optional().transform((s) => s?.trim() || undefined),
-});
-
-export const employmentUpdateSchema = employmentSchema.extend({
-  employmentId: z.string().min(1),
-});
-
-export const playerMovementSchema = z.object({
-  playerId: z.string().min(1),
-  seenAt: z.string().min(1),
-  locationDescription: z.string().min(1).max(500).trim(),
-  notes: z.string().max(2000).optional().transform((s) => s?.trim() || undefined),
-  source: z.string().max(200).optional().transform((s) => s?.trim() || undefined),
-});
-
-export const playerMovementUpdateSchema = playerMovementSchema.extend({
-  movementId: z.string().min(1),
-});
+export const affiliationUpdateSchema = z
+  .object({
+    ...affiliationFields,
+    affiliationId: z.string().min(1),
+  })
+  .refine((d) => Boolean(d.organizationId) || Boolean(d.relatedPlayerId), {
+    message: "Select a related group and/or linked profile",
+    path: ["organizationId"],
+  });
 
 export const staffRoleValues = ["ADMIN", "MEMBER"] as const;
 

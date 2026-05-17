@@ -8,15 +8,10 @@ import {
 
 type Player = {
   id: string;
-  ssn: string;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: Date;
+  discordId: string;
+  discordUser: string;
+  notes: string | null;
 };
-
-function fmt(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
 
 export function PlayerOverviewForm({ player }: { player: Player }) {
   const [state, formAction, pending] = useActionState<
@@ -34,54 +29,44 @@ export function PlayerOverviewForm({ player }: { player: Player }) {
       )}
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="text-xs text-[#6fdc5c]" htmlFor="ssn">
-            SSN
+          <label className="text-xs text-[#6fdc5c]" htmlFor="discordId">
+            Discord ID
           </label>
           <input
-            id="ssn"
-            name="ssn"
+            id="discordId"
+            name="discordId"
             required
-            defaultValue={player.ssn}
+            defaultValue={player.discordId}
             className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
           />
-          {state != null && "error" in state && state.error?.ssn && (
-            <p className="mt-1 text-xs text-red-400">{state.error.ssn[0]}</p>
+          {state != null && "error" in state && state.error?.discordId && (
+            <p className="mt-1 text-xs text-red-400">{state.error.discordId[0]}</p>
           )}
         </div>
         <div>
-          <label className="text-xs text-[#6fdc5c]" htmlFor="dateOfBirth">
-            Date of birth
+          <label className="text-xs text-[#6fdc5c]" htmlFor="discordUser">
+            Discord user
           </label>
           <input
-            id="dateOfBirth"
-            name="dateOfBirth"
-            type="date"
+            id="discordUser"
+            name="discordUser"
             required
-            defaultValue={fmt(player.dateOfBirth)}
+            defaultValue={player.discordUser}
             className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
           />
+          {state != null && "error" in state && state.error?.discordUser && (
+            <p className="mt-1 text-xs text-red-400">{state.error.discordUser[0]}</p>
+          )}
         </div>
-        <div>
-          <label className="text-xs text-[#6fdc5c]" htmlFor="firstName">
-            First name
+        <div className="sm:col-span-2">
+          <label className="text-xs text-[#6fdc5c]" htmlFor="notes">
+            Notes
           </label>
-          <input
-            id="firstName"
-            name="firstName"
-            required
-            defaultValue={player.firstName}
-            className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
-          />
-        </div>
-        <div>
-          <label className="text-xs text-[#6fdc5c]" htmlFor="lastName">
-            Last name
-          </label>
-          <input
-            id="lastName"
-            name="lastName"
-            required
-            defaultValue={player.lastName}
+          <textarea
+            id="notes"
+            name="notes"
+            rows={4}
+            defaultValue={player.notes ?? ""}
             className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
           />
         </div>
@@ -89,9 +74,9 @@ export function PlayerOverviewForm({ player }: { player: Player }) {
       <button
         type="submit"
         disabled={pending}
-        className="border border-[#39ff14] px-4 py-2 text-[#39ff14] hover:bg-[#39ff14]/10 disabled:opacity-50"
+        className="border border-[#39ff14] px-4 py-1 text-[#39ff14] hover:bg-[#39ff14]/10 disabled:opacity-50"
       >
-        {pending ? "[ WRITING... ]" : "[ UPDATE_RECORD ]"}
+        {pending ? "[ SAVING… ]" : "[ SAVE_OVERVIEW ]"}
       </button>
     </form>
   );

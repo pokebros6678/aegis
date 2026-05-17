@@ -18,6 +18,7 @@ import {
   updateOrganizationRelation,
 } from "@/lib/actions/organizations";
 import { ORGANIZATION_TYPE_LABELS } from "@/lib/organizationLabels";
+import { formatPlayerLabel } from "@/lib/playerDisplay";
 import { prisma } from "@/lib/prisma";
 
 const TABS = [
@@ -78,8 +79,8 @@ export default async function OrganizationPage({
   if (!org) notFound();
 
   const players = await prisma.player.findMany({
-    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-    select: { id: true, ssn: true, firstName: true, lastName: true },
+    orderBy: [{ discordUser: "asc" }],
+    select: { id: true, discordId: true, discordUser: true },
   });
 
   const peerOrgs = await prisma.organization.findMany({
@@ -184,7 +185,7 @@ export default async function OrganizationPage({
                     <option value="">— none —</option>
                     {players.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.lastName}, {p.firstName} ({p.ssn})
+                        {formatPlayerLabel(p)}
                       </option>
                     ))}
                   </select>
@@ -244,7 +245,7 @@ export default async function OrganizationPage({
                 <option value="">— none —</option>
                 {players.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.lastName}, {p.firstName} ({p.ssn})
+                    {formatPlayerLabel(p)}
                   </option>
                 ))}
               </select>
@@ -293,10 +294,7 @@ export default async function OrganizationPage({
                             href={`/players/${m.player.id}?tab=overview`}
                             className="text-[#39ff14] underline-offset-2 hover:underline"
                           >
-                            {m.player.lastName}, {m.player.firstName}{" "}
-                            <span className="text-[#6fdc5c]">
-                              ({m.player.ssn})
-                            </span>
+                            {formatPlayerLabel(m.player)}
                           </Link>
                         ) : (
                           m.alias ?? "—"

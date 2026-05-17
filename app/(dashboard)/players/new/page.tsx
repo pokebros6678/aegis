@@ -13,7 +13,7 @@ export default async function NewPlayerPage({
     <div className="mx-auto max-w-xl space-y-6">
       <div>
         <h1 className="text-lg">
-          <span className="text-[#6fdc5c]">aegis&gt;</span> new_player_record
+          <span className="text-[#6fdc5c]">aegis&gt;</span> new_user_of_interest
         </h1>
         <Link href="/" className="mt-2 inline-block text-sm text-[#6fdc5c] hover:underline">
           &larr; [ BACK_TO_INDEX ]
@@ -27,15 +27,16 @@ export default async function NewPlayerPage({
       )}
 
       <form action={createPlayer} className="space-y-4 border border-[#39ff14]/50 p-4">
-        <Field label="SSN" name="ssn" required />
-        <Field label="First name" name="firstName" required />
-        <Field label="Last name" name="lastName" required />
+        <Field label="Discord ID" name="discordId" required />
+        <Field label="Discord user" name="discordUser" required />
         <div>
-          <label className="block text-xs text-[#6fdc5c]">Date of birth</label>
-          <input
-            name="dateOfBirth"
-            type="date"
-            required
+          <label className="block text-xs text-[#6fdc5c]" htmlFor="notes">
+            Notes
+          </label>
+          <textarea
+            id="notes"
+            name="notes"
+            rows={4}
             className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
           />
         </div>

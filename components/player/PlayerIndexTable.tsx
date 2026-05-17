@@ -5,10 +5,8 @@ import { useRouter } from "next/navigation";
 
 export type PlayerIndexRow = {
   id: string;
-  ssn: string;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
+  discordId: string;
+  discordUser: string;
   updatedAt: string;
 };
 
@@ -19,7 +17,7 @@ export function PlayerIndexTable({ players }: { players: PlayerIndexRow[] }) {
     return (
       <tbody>
         <tr>
-          <td colSpan={5} className="p-4 text-[#6fdc5c]/70">
+          <td colSpan={4} className="p-4 text-[#6fdc5c]/70">
             no records match query.
           </td>
         </tr>
@@ -43,11 +41,8 @@ export function PlayerIndexTable({ players }: { players: PlayerIndexRow[] }) {
             }
           }}
         >
-          <td className="p-2 font-mono text-[#39ff14]">{p.ssn}</td>
-          <td className="p-2">
-            {p.lastName}, {p.firstName}
-          </td>
-          <td className="p-2 text-[#6fdc5c]/90">{p.dateOfBirth}</td>
+          <td className="p-2 font-mono text-[#39ff14]">{p.discordId}</td>
+          <td className="p-2">@{p.discordUser}</td>
           <td className="p-2 text-[#6fdc5c]/70">
             {p.updatedAt.slice(0, 16).replace("T", " ")}
           </td>

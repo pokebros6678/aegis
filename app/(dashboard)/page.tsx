@@ -15,9 +15,8 @@ export default async function HomePage({
       term.length > 0
         ? {
             OR: [
-              { ssn: { contains: term } },
-              { firstName: { contains: term } },
-              { lastName: { contains: term } },
+              { discordId: { contains: term, mode: "insensitive" } },
+              { discordUser: { contains: term, mode: "insensitive" } },
             ],
           }
         : undefined,
@@ -27,10 +26,8 @@ export default async function HomePage({
 
   const rows = players.map((p) => ({
     id: p.id,
-    ssn: p.ssn,
-    firstName: p.firstName,
-    lastName: p.lastName,
-    dateOfBirth: p.dateOfBirth.toISOString().slice(0, 10),
+    discordId: p.discordId,
+    discordUser: p.discordUser,
     updatedAt: p.updatedAt.toISOString(),
   }));
 
@@ -42,7 +39,7 @@ export default async function HomePage({
             <span className="text-[#6fdc5c]">aegis&gt;</span> {PAGE_USERS_OF_INTEREST}
           </h1>
           <p className="mt-1 text-sm text-[#6fdc5c]/80">
-            Search users of interest by SSN or name. Empty query lists recent records.
+            Search users of interest by Discord ID or username. Empty query lists recent records.
           </p>
         </div>
         <Link
@@ -61,7 +58,7 @@ export default async function HomePage({
           id="q"
           name="q"
           defaultValue={term}
-          placeholder="SSN / first / last..."
+          placeholder="Discord ID / user..."
           className="min-w-[200px] flex-1 border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14] placeholder:text-[#3a5c3a] focus:border-[#39ff14]"
           autoComplete="off"
         />
@@ -77,9 +74,8 @@ export default async function HomePage({
         <table className="w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-[#39ff14]/40 bg-black text-[#6fdc5c]">
-              <th className="p-2 font-normal">SSN</th>
-              <th className="p-2 font-normal">Name</th>
-              <th className="p-2 font-normal">DOB</th>
+              <th className="p-2 font-normal">Discord ID</th>
+              <th className="p-2 font-normal">Discord user</th>
               <th className="p-2 font-normal">Updated</th>
               <th className="p-2 font-normal" />
             </tr>

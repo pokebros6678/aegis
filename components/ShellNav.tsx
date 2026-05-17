@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/SignOutButton";
-import { NAV_GROUPS_OF_INTEREST, NAV_USERS_OF_INTEREST } from "@/lib/branding";
+import {
+  NAV_CASES,
+  NAV_GROUPS_OF_INTEREST,
+  NAV_USERS_OF_INTEREST,
+} from "@/lib/branding";
 
 const linkBase =
   "font-mono text-sm underline-offset-4 hover:underline focus:outline focus:outline-2 focus:outline-aegis-lime";
@@ -30,6 +34,7 @@ export function ShellNav() {
     >
       <NavLink href="/">{NAV_USERS_OF_INTEREST}</NavLink>
       <NavLink href="/organizations">{NAV_GROUPS_OF_INTEREST}</NavLink>
+      <NavLink href="/cases">{NAV_CASES}</NavLink>
       <NavLink href="/settings">[ SETTINGS ]</NavLink>
       <SignOutButton />
     </nav>

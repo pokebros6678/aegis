@@ -48,11 +48,7 @@ export async function createPlayer(formData: FormData) {
     });
     revalidatePath("/");
     redirect(`/players/${p.id}?tab=overview`);
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Create failed";
-    if (msg.includes("Unique constraint")) {
-      return;
-    }
+  } catch {
     return;
   }
 }
@@ -130,22 +126,19 @@ export async function createAffiliation(formData: FormData) {
   const actor = auditActorMeta(session);
   const parsed = affiliationSchema.safeParse({
     playerId: formData.get("playerId"),
-    organizationId: formData.get("organizationId") ?? undefined,
+    organizationId: formData.get("organizationId"),
     role: formData.get("role") ?? undefined,
     notes: formData.get("notes") ?? undefined,
-    relatedPlayerId: formData.get("relatedPlayerId") ?? undefined,
   });
   if (!parsed.success) return;
   const d = parsed.data;
-  if (d.relatedPlayerId === d.playerId) return;
   await prisma.$transaction(async (tx) => {
     const a = await tx.affiliation.create({
       data: {
         playerId: d.playerId,
-        organizationId: d.organizationId ?? null,
+        organizationId: d.organizationId,
         role: d.role ?? null,
         notes: d.notes ?? null,
-        relatedPlayerId: d.relatedPlayerId ?? null,
       },
     });
     await tx.auditLog.create({
@@ -183,14 +176,12 @@ export async function updateAffiliation(formData: FormData) {
   const parsed = affiliationUpdateSchema.safeParse({
     playerId: formData.get("playerId"),
     affiliationId: formData.get("affiliationId"),
-    organizationId: formData.get("organizationId") ?? undefined,
+    organizationId: formData.get("organizationId"),
     role: formData.get("role") ?? undefined,
     notes: formData.get("notes") ?? undefined,
-    relatedPlayerId: formData.get("relatedPlayerId") ?? undefined,
   });
   if (!parsed.success) return;
   const d = parsed.data;
-  if (d.relatedPlayerId === d.playerId) return;
   const row = await prisma.affiliation.findFirst({
     where: { id: d.affiliationId, playerId: d.playerId },
   });
@@ -199,10 +190,9 @@ export async function updateAffiliation(formData: FormData) {
     await tx.affiliation.update({
       where: { id: d.affiliationId },
       data: {
-        organizationId: d.organizationId ?? null,
+        organizationId: d.organizationId,
         role: d.role ?? null,
         notes: d.notes ?? null,
-        relatedPlayerId: d.relatedPlayerId ?? null,
       },
     });
     await tx.auditLog.create({

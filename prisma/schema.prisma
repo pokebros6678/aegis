@@ -8,14 +8,15 @@ datasource db {
 }
 
 enum OrganizationType {
-  MILITIA
-  CRIME_FAMILY
-  STREET_GANG
-  MOTORCYCLE_CLUB
-  CARTEL
-  LAW_ENFORCEMENT_AGENCY
-  FEDERAL_AGENCY
-  MILITARY_BRANCH
+  COM
+  SUSPECTED_COM
+  ROBLOX
+  NSFW
+}
+
+enum CaseCategory {
+  COMPLIANCE_REPORTING
+  ANALYTICS
 }
 
 enum AuditLogAction {
@@ -45,6 +46,7 @@ model StaffUser {
   updatedAt    DateTime  @updatedAt
 
   auditLogs AuditLog[]
+  casePosts CasePost[]
 }
 
 model AuditLog {
@@ -73,9 +75,9 @@ model Player {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  affiliations           Affiliation[] @relation("PlayerAffiliations")
-  linkedFromAffiliations Affiliation[] @relation("RelatedPlayer")
-  organizationMembers    OrganizationMember[]
+  affiliations        Affiliation[]
+  organizationMembers OrganizationMember[]
+  cases               Case[]
 }
 
 model Organization {
@@ -86,12 +88,13 @@ model Organization {
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
-  members          OrganizationMember[]
-  relations        OrganizationRelation[] @relation("OrgRelations")
-  relationsAsPeer  OrganizationRelation[] @relation("OrgRelationPeer")
-  intel            OrganizationIntel[]
-  locations        OrganizationLocation[]
-  affiliations     Affiliation[]
+  members         OrganizationMember[]
+  relations       OrganizationRelation[] @relation("OrgRelations")
+  relationsAsPeer OrganizationRelation[] @relation("OrgRelationPeer")
+  intel           OrganizationIntel[]
+  locations       OrganizationLocation[]
+  affiliations    Affiliation[]
+  cases           Case[]
 }
 
 model OrganizationMember {
@@ -106,14 +109,14 @@ model OrganizationMember {
 }
 
 model OrganizationRelation {
-  id                   String        @id @default(cuid())
-  organizationId       String
-  organization         Organization  @relation("OrgRelations", fields: [organizationId], references: [id], onDelete: Cascade)
-  peerOrganizationId   String?
-  peerOrganization     Organization? @relation("OrgRelationPeer", fields: [peerOrganizationId], references: [id], onDelete: SetNull)
-  externalLabel        String?
-  relationKind         String?
-  notes                String?
+  id                 String        @id @default(cuid())
+  organizationId     String
+  organization       Organization  @relation("OrgRelations", fields: [organizationId], references: [id], onDelete: Cascade)
+  peerOrganizationId String?
+  peerOrganization   Organization? @relation("OrgRelationPeer", fields: [peerOrganizationId], references: [id], onDelete: SetNull)
+  externalLabel      String?
+  relationKind       String?
+  notes              String?
 }
 
 model OrganizationIntel {
@@ -140,13 +143,40 @@ model OrganizationLocation {
 }
 
 model Affiliation {
-  id              String        @id @default(cuid())
-  playerId        String
-  player          Player        @relation("PlayerAffiliations", fields: [playerId], references: [id], onDelete: Cascade)
-  organizationId  String?
-  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  role            String?
-  notes           String?
-  relatedPlayerId String?
-  relatedPlayer   Player?       @relation("RelatedPlayer", fields: [relatedPlayerId], references: [id], onDelete: SetNull)
+  id             String       @id @default(cuid())
+  playerId       String
+  player         Player       @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           String?
+  notes          String?
+}
+
+model Case {
+  id             String       @id @default(cuid())
+  caseNumber     String       @unique
+  category       CaseCategory
+  seq            Int
+  title          String
+  body           String       @db.Text
+  playerId       String?
+  player         Player?      @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  posts CasePost[]
+
+  @@unique([category, seq])
+}
+
+model CasePost {
+  id           String     @id @default(cuid())
+  caseId       String
+  case         Case       @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  authorUserId String?
+  authorUser   StaffUser? @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
+  body         String     @db.Text
+  createdAt    DateTime   @default(now())
 }

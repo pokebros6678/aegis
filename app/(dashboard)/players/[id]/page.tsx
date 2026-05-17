@@ -9,7 +9,6 @@ import {
   updateAffiliation,
 } from "@/lib/actions/intel";
 import { ORGANIZATION_TYPE_LABELS } from "@/lib/organizationLabels";
-import { formatPlayerLabel } from "@/lib/playerDisplay";
 import { prisma } from "@/lib/prisma";
 
 const TABS = ["overview", "affiliations"] as const;
@@ -70,27 +69,17 @@ export default async function PlayerPage({
     include: {
       affiliations: {
         orderBy: { id: "desc" },
-        include: {
-          organization: true,
-          relatedPlayer: true,
-        },
+        include: { organization: true },
       },
     },
   });
 
   if (!player) notFound();
 
-  const [others, organizations] = await Promise.all([
-    prisma.player.findMany({
-      where: { id: { not: id } },
-      orderBy: [{ discordUser: "asc" }],
-      select: { id: true, discordId: true, discordUser: true },
-    }),
-    prisma.organization.findMany({
-      orderBy: [{ type: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, type: true },
-    }),
-  ]);
+  const organizations = await prisma.organization.findMany({
+    orderBy: [{ type: "asc" }, { name: "asc" }],
+    select: { id: true, name: true, type: true },
+  });
 
   const tabHref = (t: Tab) => `/players/${id}?tab=${t}`;
 
@@ -166,44 +155,23 @@ export default async function PlayerPage({
                   name="affiliationId"
                   value={affiliationEditing.id}
                 />
-                <p className="text-xs text-[#6fdc5c]">&gt; related_groups</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="text-xs text-[#6fdc5c]" htmlFor="ea-org">
-                      Related group
-                    </label>
-                    <select
-                      id="ea-org"
-                      name="organizationId"
-                      defaultValue={affiliationEditing.organizationId ?? ""}
-                      className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
-                    >
-                      <option value="">— none —</option>
-                      {organizations.map((o) => (
-                        <option key={o.id} value={o.id}>
-                          {o.name} ({ORGANIZATION_TYPE_LABELS[o.type]})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#6fdc5c]" htmlFor="rel-edit">
-                      Linked profile
-                    </label>
-                    <select
-                      id="rel-edit"
-                      name="relatedPlayerId"
-                      defaultValue={affiliationEditing.relatedPlayerId ?? ""}
-                      className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
-                    >
-                      <option value="">— none —</option>
-                      {others.map((o) => (
-                        <option key={o.id} value={o.id}>
-                          {formatPlayerLabel(o)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <div>
+                  <label className="text-xs text-[#6fdc5c]" htmlFor="ea-org">
+                    Related group
+                  </label>
+                  <select
+                    id="ea-org"
+                    name="organizationId"
+                    required
+                    defaultValue={affiliationEditing.organizationId}
+                    className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
+                  >
+                    {organizations.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.name} ({ORGANIZATION_TYPE_LABELS[o.type]})
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <Field
                   htmlId="ea-role"
@@ -245,44 +213,26 @@ export default async function PlayerPage({
             className="space-y-4 border border-[#39ff14]/40 p-4"
           >
             <input type="hidden" name="playerId" value={player.id} />
-            <p className="text-xs text-[#6fdc5c]">&gt; related_groups</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className="text-xs text-[#6fdc5c]" htmlFor="na-org">
-                  Related group
-                </label>
-                <select
-                  id="na-org"
-                  name="organizationId"
-                  defaultValue=""
-                  className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
-                >
-                  <option value="">— none —</option>
-                  {organizations.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.name} ({ORGANIZATION_TYPE_LABELS[o.type]})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-[#6fdc5c]" htmlFor="relatedPlayerId">
-                  Linked profile
-                </label>
-                <select
-                  id="relatedPlayerId"
-                  name="relatedPlayerId"
-                  defaultValue=""
-                  className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
-                >
-                  <option value="">— none —</option>
-                  {others.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {formatPlayerLabel(o)}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label className="text-xs text-[#6fdc5c]" htmlFor="na-org">
+                Related group
+              </label>
+              <select
+                id="na-org"
+                name="organizationId"
+                required
+                defaultValue=""
+                className="mt-1 w-full border border-[#39ff14]/60 bg-black px-2 py-1 text-[#39ff14]"
+              >
+                <option value="" disabled>
+                  Select group...
+                </option>
+                {organizations.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name} ({ORGANIZATION_TYPE_LABELS[o.type]})
+                  </option>
+                ))}
+              </select>
             </div>
             <Field htmlId="na-role" name="role" label="Role" />
             <div>
@@ -307,9 +257,8 @@ export default async function PlayerPage({
             <table className="w-full border-collapse text-left text-sm">
               <thead>
                 <tr className="border-b border-[#39ff14]/40 text-[#6fdc5c]">
-                  <th className="p-2 font-normal">Related group</th>
+                  <th className="p-2 font-normal">Group</th>
                   <th className="p-2 font-normal">Role</th>
-                  <th className="p-2 font-normal">Linked profile</th>
                   <th className="p-2 font-normal">Notes</th>
                   <th className="p-2 font-normal" />
                   <th className="p-2 font-normal" />
@@ -318,7 +267,7 @@ export default async function PlayerPage({
               <tbody>
                 {player.affiliations.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-3 text-[#6fdc5c]/70">
+                    <td colSpan={5} className="p-3 text-[#6fdc5c]/70">
                       no affiliations on file.
                     </td>
                   </tr>
@@ -329,30 +278,14 @@ export default async function PlayerPage({
                       className="border-b border-[#39ff14]/20 hover:bg-[#39ff14]/5"
                     >
                       <td className="p-2">
-                        {a.organization ? (
-                          <Link
-                            href={`/organizations/${a.organization.id}?tab=overview`}
-                            className="text-[#39ff14] underline-offset-2 hover:underline"
-                          >
-                            {a.organization.name}
-                          </Link>
-                        ) : (
-                          "—"
-                        )}
+                        <Link
+                          href={`/organizations/${a.organization.id}?tab=overview`}
+                          className="text-[#39ff14] underline-offset-2 hover:underline"
+                        >
+                          {a.organization.name}
+                        </Link>
                       </td>
                       <td className="p-2">{a.role ?? "—"}</td>
-                      <td className="p-2">
-                        {a.relatedPlayer ? (
-                          <Link
-                            href={`/players/${a.relatedPlayer.id}?tab=overview`}
-                            className="text-[#39ff14] underline-offset-2 hover:underline"
-                          >
-                            {formatPlayerLabel(a.relatedPlayer)}
-                          </Link>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
                       <td className="p-2 text-[#6fdc5c]/90">{a.notes ?? "—"}</td>
                       <td className="p-2">
                         <Link

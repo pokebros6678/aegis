@@ -1,9 +1,8 @@
 export const EntityType = {
   Player: "Player",
-  Vehicle: "Vehicle",
   Affiliation: "Affiliation",
-  EmploymentRecord: "EmploymentRecord",
-  PlayerMovement: "PlayerMovement",
+  Case: "Case",
+  CasePost: "CasePost",
   Organization: "Organization",
   OrganizationMember: "OrganizationMember",
   OrganizationRelation: "OrganizationRelation",

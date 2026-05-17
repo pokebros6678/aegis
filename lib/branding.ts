@@ -17,9 +17,11 @@ export const LOGIN_ASCII_BANNER = `╔══════════════
 
 export const NAV_USERS_OF_INTEREST = "[ USERS_OF_INTEREST ]";
 export const NAV_GROUPS_OF_INTEREST = "[ GROUPS_OF_INTEREST ]";
+export const NAV_CASES = "[ CASES ]";
 
 export const PAGE_USERS_OF_INTEREST = "users_of_interest";
 export const PAGE_GROUPS_OF_INTEREST = "groups_of_interest";
+export const PAGE_CASES = "cases";
 
 export const METADATA_TITLE = "AEGIS — Blackbox";
 export const METADATA_DESCRIPTION =

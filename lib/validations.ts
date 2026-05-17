@@ -1,14 +1,15 @@
 import { z } from "zod";
 
 export const organizationTypeValues = [
-  "MILITIA",
-  "CRIME_FAMILY",
-  "STREET_GANG",
-  "MOTORCYCLE_CLUB",
-  "CARTEL",
-  "LAW_ENFORCEMENT_AGENCY",
-  "FEDERAL_AGENCY",
-  "MILITARY_BRANCH",
+  "COM",
+  "SUSPECTED_COM",
+  "ROBLOX",
+  "NSFW",
+] as const;
+
+export const caseCategoryValues = [
+  "COMPLIANCE_REPORTING",
+  "ANALYTICS",
 ] as const;
 
 export type OrganizationTypeValue = (typeof organizationTypeValues)[number];
@@ -119,36 +120,56 @@ export const playerUpsertSchema = z.object({
   notes: z.string().max(8000).optional().transform((s) => s?.trim() || undefined),
 });
 
-const affiliationFields = {
+export const affiliationSchema = z.object({
   playerId: z.string().min(1),
-  organizationId: z
-    .string()
-    .optional()
-    .transform((s) => (s && s.length > 0 ? s : undefined)),
+  organizationId: z.string().min(1),
   role: z.string().max(120).optional().transform((s) => s?.trim() || undefined),
   notes: z.string().max(2000).optional().transform((s) => s?.trim() || undefined),
-  relatedPlayerId: z
-    .string()
-    .optional()
-    .transform((s) => (s && s.length > 0 ? s : undefined)),
-};
+});
 
-export const affiliationSchema = z
-  .object(affiliationFields)
-  .refine((d) => Boolean(d.organizationId) || Boolean(d.relatedPlayerId), {
-    message: "Select a related group and/or linked profile",
-    path: ["organizationId"],
-  });
+export const affiliationUpdateSchema = affiliationSchema.extend({
+  affiliationId: z.string().min(1),
+});
 
-export const affiliationUpdateSchema = z
+export const caseCreateSchema = z
   .object({
-    ...affiliationFields,
-    affiliationId: z.string().min(1),
+    category: z.enum(caseCategoryValues),
+    title: z.string().min(1).max(200).trim(),
+    body: z.string().min(1).max(16000).trim(),
+    playerId: z
+      .string()
+      .optional()
+      .transform((s) => (s && s.length > 0 ? s : undefined)),
+    organizationId: z
+      .string()
+      .optional()
+      .transform((s) => (s && s.length > 0 ? s : undefined)),
+    discordId: z.string().max(64).optional().transform((s) => s?.trim() || undefined),
+    discordUser: z.string().max(120).optional().transform((s) => s?.trim() || undefined),
   })
-  .refine((d) => Boolean(d.organizationId) || Boolean(d.relatedPlayerId), {
-    message: "Select a related group and/or linked profile",
-    path: ["organizationId"],
-  });
+  .refine(
+    (d) =>
+      Boolean(d.playerId) ||
+      Boolean(d.organizationId) ||
+      Boolean(d.discordId && d.discordUser),
+    {
+      message: "Link a user of interest, a group, or enter Discord ID and user",
+      path: ["playerId"],
+    },
+  )
+  .refine(
+    (d) => !d.discordId || Boolean(d.discordUser),
+    { message: "Discord user required with Discord ID", path: ["discordUser"] },
+  )
+  .refine(
+    (d) => !d.discordUser || Boolean(d.discordId),
+    { message: "Discord ID required with Discord user", path: ["discordId"] },
+  );
+
+export const casePostSchema = z.object({
+  caseId: z.string().min(1),
+  body: z.string().min(1).max(16000).trim(),
+});
 
 export const staffRoleValues = ["ADMIN", "MEMBER"] as const;
 
